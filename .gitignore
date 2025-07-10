@@ -1,0 +1,5 @@
+.vscode/
+/out/
+/local/
+/build/
+.markdownlint.jsonc
