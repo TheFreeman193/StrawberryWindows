@@ -92,7 +92,7 @@ includedir=`${prefix}/include
     Write-Host -fo White "Parsing version file '$VersionFile'..."
 
     if (-not (Test-Path $VersionFile)) {
-        $Err = [ErrorRecord]::new([FileNotFoundException]::new("Version file '$VersionFile' not found. Please run DownloadDependencies.ps1 first.", $VersionFile), 'FileNotFound', 'ObjectNotFound', $VersionFile)
+        $Err = [ErrorRecord]::new([FileNotFoundException]::new("Version file '$VersionFile' not found. Please run Get-Dependencies.ps1 first.", $VersionFile), 'FileNotFound', 'ObjectNotFound', $VersionFile)
         $PSCmdlet.WriteError($Err)
         return
     }
@@ -119,7 +119,7 @@ includedir=`${prefix}/include
     Write-Host -fo White ('{0,-70}' -f "Checking downloads path '$DownloadPath'...  ") -NoNewline
     if (-not (Test-Path $DownloadPath -PathType Container)) {
         Write-Host -fo Red 'NOT FOUND'
-        $Err = [ErrorRecord]::new([DirectoryNotFoundException]::new("Downloads path '$DownloadPath' not found. Please run DownloadDependencies.ps1 first."), 'DirectoryNotFound', 'ObjectNotFound', $DownloadPath)
+        $Err = [ErrorRecord]::new([DirectoryNotFoundException]::new("Downloads path '$DownloadPath' not found. Please run Get-Dependencies.ps1 first."), 'DirectoryNotFound', 'ObjectNotFound', $DownloadPath)
         $PSCmdlet.WriteError($Err)
         return
     }

@@ -39,7 +39,7 @@ begin {
     $STRAWBERRY_PATCHES_BRANCH = 'master', '4eba50e0d666d3972870e97b8e49bd85b9363cb1'
 
     if (-not (Test-Path $VersionFile)) {
-        $VersionScript = Get-Item (Join-Path $PSScriptRoot 'GetVersions.ps1')
+        $VersionScript = Get-Item (Join-Path $PSScriptRoot 'Get-Versions.ps1')
         if (-not $?) { return }
         & $VersionScript
         if (-not $? -or -not (Test-Path $VersionFile)) { return }
