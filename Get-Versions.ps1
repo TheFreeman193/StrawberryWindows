@@ -4,14 +4,14 @@ using namespace System.Collections.Specialized
 [CmdletBinding()]
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [string]$BatchCommit = 'e2b5bf501151bf851443233d5274605477c34eaa',
-    [string]$WorkflowCommit = '4eba50e0d666d3972870e97b8e49bd85b9363cb1'
+    [string]$MsvcCommit = '3255b176298fee1a352af3db967a56c820491509',
+    [string]$MsvcDepsCommit = '84058cb58f2279a9e609c0a943fcea9490811777'
 )
 process {
     $VersionTemp = New-TemporaryFile
     $WorkflowTemp = New-TemporaryFile
-    Invoke-WebRequest "https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc/$BatchCommit/versions.bat" -OutFile $VersionTemp
-    Invoke-WebRequest "https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/$WorkflowCommit/.github/workflows/build.yml" -OutFile $WorkflowTemp
+    Invoke-WebRequest "https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc/$MsvcCommit/versions.bat" -OutFile $VersionTemp
+    Invoke-WebRequest "https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/$MsvcDepsCommit/.github/workflows/build.yml" -OutFile $WorkflowTemp
     if (-not $?) { return }
 
     $VERSIONS = [OrderedDictionary]::new()
@@ -23,7 +23,8 @@ process {
             return
         }
         $Key = $Matches[1].ToUpperInvariant() -replace 'WINFLEXBISON_VERSION', 'WIN_FLEX_BISON_VERSION' -replace 'LIBJPEG_VERSION', 'LIBJPEG_TURBO_VERSION' -replace
-        'SQLITE_VERSION', 'SQLITE3_VERSION' -replace 'GSTREAMER_GST_PLUGINS_RS_VERSION', 'GSTREAMER_PLUGINS_RS_VERSION' -creplace '_7Z', '7Z'
+        'SQLITE_VERSION', 'SQLITE3_VERSION' -replace 'GSTREAMER_GST_PLUGINS_RS_VERSION', 'GSTREAMER_PLUGINS_RS_VERSION' -creplace '_7Z', '7Z' -replace
+        'PEPARSE_VERSION', 'PE_PARSE_VERSION'
         $PSCmdlet.WriteVerbose("${Key}: $($Matches[2])")
         $VERSIONS[$Key] = $Matches[2]
     }

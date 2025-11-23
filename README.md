@@ -42,21 +42,21 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
   - C++ profiling tools
   - C++ CMake tools for Win64
   - C++ AddressSanitizer
-  - Windows 11 SDK 10.0.26100.3916
+  - Windows 11 SDK 10.0.22621.0
   - vcpkg manager
-- Git for Windows 2.49.0
+- Git for Windows 2.51.2
 - Qt 6 build tools for VS2022
-- CMake 4.0.2
-- Meson Build 1.8.1
+- CMake 4.1.2
+- Meson Build 1.8.2
 - NASM 2.16.03
-- Strawberry Perl 5.40.2.1
+- Strawberry Perl 5.42.0
 - Python 3.14.0b1
-- 7-Zip 24.09
+- 7-Zip 25.01
 - WinFlex 2.6.4
 - WinBison 3.7.4
-- Rust Compiler 1.87.0
+- Rust Compiler 1.89.0
 - NSIS 3.11
-  - LockedList Plugin 3.0.0.4
+  - LockedList Plugin (DigitalMediaServer fork) 3.1.0.0
   - Registry Plugin 4.2
   - Internet Client Plugin (DigitalMediaServer fork) 1.0.5.7
 
@@ -67,9 +67,9 @@ The build scripts are derived from the [download.bat](https://github.com/strawbe
 These scripts apply the same patches to the Strawberry dependencies as found in the [strawberry-msvc-dependencies](https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/) repo, plus a few tweaks here and there to make sure they compile in my build environment.
 
 No changes are made to the [Strawberry source code](https://github.com/strawberrymusicplayer/strawberry) with the exception of adding a static cast to `gsize` in the [gstfastspectrum.cpp](https://github.com/strawberrymusicplayer/strawberry/blame/d901258f11431a2acade70b25dee365a0f4024d5/src/engine/gstfastspectrum.cpp#L472) file to permit strict building (`BUILD_WERROR=ON`) on x86 builds.
-You can view [this patch](https://github.com/TheFreeman193/StrawberryWindows/blob/main/Build-Strawberry.ps1?plain=1#L2309-L2313) in the build script.
+You can view the patch in the [build script](https://github.com/TheFreeman193/StrawberryWindows/blob/main/Build-Strawberry.ps1?plain=1) by searching for 'gstfastspectrum.cpp'.
 
-Each dependency and Strawberry itself are compiled in a separate function in the build script, with the build strategy defined [near the end](https://github.com/TheFreeman193/StrawberryWindows/blob/main/Build-Strawberry.ps1?plain=1#L2407-L2489).
+Each dependency and Strawberry itself are compiled in a separate function in the build script, with the build strategy defined near the end (search for '#region Build Strategy').
 
 ### Get-Versions.ps1
 
