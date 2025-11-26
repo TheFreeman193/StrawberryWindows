@@ -9,6 +9,7 @@ if (-not $?) { return }
 $WDSDK = Get-Item "${env:ProgramFiles(x86)}\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.UniversalCRT.Debug\*\Redist\Debug\$Arch" | Select-Object -Last 1 -ExpandProperty FullName
 if (-not $?) { return }
 
+if (-not (Test-Path $TargetDir)) { $null = New-Item -ItemType Directory $TargetDir }
 Copy-Item "$VCDR\*.dll" $TargetDir -Force
 if (-not $?) { return }
 Copy-Item "$WDSDK\*.dll" $TargetDir -Force

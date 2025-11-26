@@ -4,8 +4,10 @@ using namespace System.Collections.Specialized
 [CmdletBinding()]
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [string]$MsvcCommit = '3255b176298fee1a352af3db967a56c820491509',
-    [string]$MsvcDepsCommit = '84058cb58f2279a9e609c0a943fcea9490811777'
+    [string]$MsvcCommit = '2e70dfef8a748e2ffdfb956aa9fc54178b67ab38', # https://github.com/strawberrymusicplayer/strawberry-msvc/commits/master/
+    [string]$MsvcDepsCommit = 'f7ceff9a5b11effca085209437d76a5a288bbced', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
+    [string]$MsvcDepsRelease = '19686038772', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
+    [string]$StrawberryCommit = 'd2205cfe8165aaa3226917f5bdf45ec35bb03df7' # https://github.com/strawberrymusicplayer/strawberry/commits/master/
 )
 process {
     $VersionTemp = New-TemporaryFile
@@ -40,6 +42,7 @@ process {
         $Key = $Matches[1].ToUpperInvariant()
         $Value = $Matches[2]
         if ($Key -ieq 'GETTEXT_VERSION' -and $Value -match '([\d\.]+)-v([\d\.]+)') {
+            # Special case: iconv & gettext are bundled together but don't have unified version numbers
             $PSCmdlet.WriteVerbose("${Key}: $($VERSIONS[$Key]) -> $($Matches[1])")
             $PSCmdlet.WriteVerbose("ICONV_VERSION: $($Matches[2])")
             $VERSIONS[$Key] = $Matches[1]
@@ -49,6 +52,15 @@ process {
         $PSCmdlet.WriteVerbose("${Key}: $($VERSIONS[$Key]) -> $Value")
         $VERSIONS[$Matches[1].ToUpperInvariant()] = $Matches[2]
     }
+
+    # Overrides
+    $VERSIONS['FFMPEG_X86_VERSION'] = '7.1.2' # ffmpeg meson-8.x port has 32-bit build issues
+
+    # Commits
+    $VERSIONS['STRAWBERRY_REPO_COMMIT'] = $StrawberryCommit
+    $VERSIONS['MSVC_DEPS_REPO_COMMIT'] = $MsvcDepsCommit
+    $VERSIONS['MSVC_DEPS_REPO_RELEASE'] = $MsvcDepsRelease
+    $VERSIONS['MSVC_REPO_COMMIT'] = $MsvcCommit
 
     # Write version file
     foreach ($Name in $VERSIONS.Keys) {

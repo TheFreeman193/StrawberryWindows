@@ -2301,6 +2301,9 @@ Cflags: -I`${includedir}
             Copy-Item "$DownloadPath\ffmpeg" $LocalBuildPath -Recurse -Force
             if (-not $?) { return }
         }
+        $TargetBranch = if ($BuildArch -eq 'x86') { $FFMPEG_X86_VERSION } else { $FFMPEG_VERSION }
+        git.exe -C $LocalBuildPath checkout "meson-$TargetBranch"
+        git.exe -C $LocalBuildPath pull
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=both `
@@ -3218,6 +3221,125 @@ Cflags: -I`${includedir}
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
     }
 
+    function Get-DependenciesFromNsi {
+        [CmdletBinding()]
+        param(
+            [string]$NSIFile
+        )
+        begin {
+            $NSISVars = @{
+                arch_x64   = $BuildArch -eq 'x64'
+                arch_x86   = $BuildArch -eq 'x86'
+                arch_arm64 = $BuildArch -eq 'arm64'
+                arch       = $BuildArch
+                debug      = $BuildType -eq 'debug'
+                release    = $BuildType -eq 'release'
+                build_type = $BuildType
+                mingw      = $false
+                msvc       = $true
+                compiler   = $true
+            }
+            $null = $NSISVars
+            $IncludeSections = 'Strawberry', 'GIO modules', 'Qt Platform plugins', 'Qt styles', 'Qt TLS plugins',
+            'Qt SQL Drivers', 'Qt imageformats', 'Gstreamer plugins'
+            $FilenameVars = @{
+                vc_redist_file = "vc_redist.$BuildArch.exe"
+            }
+            function TokenizeNsisIf {
+                param(
+                    [Parameter(Mandatory)]
+                    [string]$Line,
+                    [Parameter(Mandatory)]
+                    [ValidateScript({ $_ -match '^\w+$' })]
+                    [string]$VarName
+                )
+                $M = [regex]::Match($Line, '^\s*!(?<n>ifn?def)\s+(?<t>(?:\w+|&{1,2}|\|{1,2})\s+)*(?<t>\w+|&{1,2}|\|{1,2})\s*$')
+                if (-not $M.Success) { return }
+                $Tokens = $M.Groups['t'].Captures.Where{ $_.Value.Trim() -match '^(?:&{1,2}|\|{1,2}|\w+)$' }.ForEach{
+                    $_.Value.Trim().ToLowerInvariant() } -replace '^&{1,2}$', '-and' -replace '^\|{1,2}$', '-or' -replace '^(\w+)$', '$${NSISVars}.''$1'''
+                $SafeTokens = if ($M.Groups['n'].Value -eq 'ifndef') { '-not (' + ($Tokens -join ' ') + ')' } else { $Tokens -join ' ' }
+                $Result = $false
+                try {
+                    $Result = Invoke-Expression $SafeTokens
+                } catch {
+                    $PSCmdlet.WriteWarning("$(' ' * $Indent)Unable to parse NSIS ifdef/ifndef statement: '$Line'.")
+                }
+                $Result
+            }
+        }
+        process {
+            $NSIS = Get-Content $NSIFile
+            if (-not $?) { return }
+
+            $RootSectStart = $NSIS.IndexOf('Section "Strawberry" Strawberry')
+            if ($RootSectStart -lt 0) {
+                $PSCmdlet.WriteWarning("Couldn't find Strawberry section of NSI file!")
+                return
+            }
+
+            $NeededFiles = [List[string]]::new()
+            $CurrentSection = ''
+            $IfStack = [Stack[bool]]::new()
+            $Indent = 0
+
+            for ($line = $RootSectStart; $line -lt $NSIS.Count; $line++) {
+                $LineText = $NSIS[$line] -replace '^\s*;.+$' -replace '\s+;[^"'']+$'
+                if ([string]::IsNullOrWhiteSpace($LineText)) { continue }
+
+                # Section handling
+                if (-not [string]::IsNullOrEmpty($CurrentSection)) {
+                    if ($LineText -match '^\s*SectionEnd') {
+                        $Indent -= 4
+                        $PSCmdlet.WriteVerbose("$(' ' * $Indent)End of section '$CurrentSection'.")
+                        $CurrentSection = ''
+                        continue
+                    }
+                } else {
+                    if ($LineText -match '^\s*Section (["''])(.+)\1') {
+                        $CurrentSection = $Matches[2].Trim()
+                        $PSCmdlet.WriteVerbose("$(' ' * $Indent)Processing section '$CurrentSection'.")
+                        $Indent += 4
+                        continue
+                    }
+                    # If inside a section that doesn't apply to us, skip
+                    if ($CurrentSection -notin $IncludeSections) { continue }
+                }
+
+                # Conditional handling
+                if ($LineText -match '^\s*!ifn?def\s+(?:(?:\w+|&{1,2}|\|{1,2})\s+)*(?:\w+|&{1,2}|\|{1,2})\s*$') {
+                    $Include = TokenizeNsisIf $LineText -VarName 'NSISVars'
+                    $IfStack.Push($Include)
+                    $PSCmdlet.WriteVerbose("$(' ' * $Indent)Start conditional block '$LineText', include = $Include.")
+                    $Indent += 4
+                    continue
+                } elseif ($LineText -match '^\s*!else\s*$') {
+                    $Prev = $IfStack.Pop()
+                    $IfStack.Push(-not $Prev)
+                    $PSCmdlet.WriteVerbose("$(' ' * ($Indent - 4))Else conditional block")
+                    continue
+                } elseif ($LineText -match '^\s*!endif\s*$') {
+                    [void]$IfStack.Pop()
+                    $Indent -= 4
+                    $PSCmdlet.WriteVerbose("$(' ' * $Indent)End conditional block")
+                    continue
+                }
+                # If in a conditional that excludes current config, skip
+                if ($IfStack.Count -gt 0 -and $IfStack.Contains($false)) { continue }
+
+                # File include handling
+                if ($LineText -match '^\s*File ([''"])(.+)\1') {
+                    $Filename = $Matches[2].Trim() -replace '^/oname=[^"'']+["'']\s+["'']'
+                    if ($Filename -match '^\$\{(.+)\}$') { $Filename = $FilenameVars[$Matches[1]] }
+                    if ([string]::IsNullOrWhiteSpace($Filename)) { $PSCmdlet.WriteWarning("$(' ' * $Indent)Skipped file '$Filename'"); continue }
+                    $NeededFiles.Add($Filename)
+                    $PSCmdlet.WriteVerbose("$(' ' * $Indent)Added dependency file '$($NeededFiles[$NeededFiles.Count - 1])'.")
+                }
+            }
+            $NeededFiles
+        }
+    }
+
+
     function BuildStrawberry {
         $LocalBuildPath = "$BuildPath\_strawberry"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
@@ -3271,53 +3393,6 @@ Cflags: -I`${includedir}
                 if (-not $?) { return }
             }
         }
-        Write-Host -fo Cyan '    Copy dependency binaries...'
-        foreach ($Bin in 'abseil_dll.dll', 'avcodec*.dll', 'avfilter*.dll', 'avformat*.dll', 'avutil*.dll', 'brotlicommon.dll', 'brotlidec.dll', 'chromaprint.dll', 'ebur128.dll',
-            'faad-2.dll', 'fdk-aac.dll', 'ffi-7.dll', 'flac.dll', 'freetype*.dll', 'gio-2.0-0.dll', 'glib-2.0-0.dll', 'gme.dll', 'gmodule-2.0-0.dll', 'gnutls.dll', 'gobject-2.0-0.dll',
-            'gst-discoverer-1.0.exe', 'gst-launch-1.0.exe', 'gst-play-1.0.exe', 'gstadaptivedemux-1.0-0.dll', 'gstapp-1.0-0.dll', 'gstaudio-1.0-0.dll', 'gstbadaudio-1.0-0.dll',
-            'gstbase-1.0-0.dll', 'gstcodecparsers-1.0-0.dll', 'gstfft-1.0-0.dll', 'gstisoff-1.0-0.dll', 'gstmpegts-1.0-0.dll', 'gstnet-1.0-0.dll', 'gstpbutils-1.0-0.dll',
-            'gstreamer-1.0-0.dll', 'gstriff-1.0-0.dll', 'gstrtp-1.0-0.dll', 'gstrtsp-1.0-0.dll', 'gstsdp-1.0-0.dll', 'gsttag-1.0-0.dll', 'gsturidownloader-1.0-0.dll',
-            'gstvideo-1.0-0.dll', 'gstwinrt-1.0-0.dll', 'harfbuzz*.dll', 'icudt*.dll', 'icuin*.dll', 'icuuc*.dll', 'intl-8.dll', 'jpeg62.dll', 'libbs2b.dll', 'libcrypto-3*.dll',
-            'libfaac_dll.dll', 'libfftw3-3.dll', 'libiconv*.dll', 'liblzma.dll', 'libmp3lame.dll', 'libopenmpt.dll', 'libpng16*.dll', 'libprotobuf*.dll', 'libspeex*.dll',
-            'libssl-3*.dll', 'libxml2*.dll', 'mpcdec.dll', 'mpg123.dll', 'nghttp2.dll', 'ogg.dll', 'opus.dll', 'orc-0.4-0.dll', 'pcre2-16*.dll', 'pcre2-8*.dll', 'postproc*.dll',
-            'psl-5.dll', 'qt6concurrent*.dll', 'qt6core*.dll', 'qt6gui*.dll', 'qt6network*.dll', 'qt6sql*.dll', 'qt6widgets*.dll', 'qtsparkle-qt6.dll', 'soup-3.0-0.dll',
-            'sqlite3.dll', 'sqlite3.exe', 'swresample*.dll', 'swscale*.dll', 'tag.dll', 'twolame*.dll', 'vorbis.dll', 'vorbisfile.dll', 'wavpackdll.dll', 'zlib*.dll',
-            'kdsingleapplication*.dll', 'utf8_validity.dll', 'getopt.dll' ) {
-            Copy-Item "$DependsPath\bin\$Bin" "$LocalBuildPath\build\" -Force
-            if (-not $?) { return }
-        }
-        if ($BuildAddressSize -eq '32') {
-            Copy-Item "$DependsPath\bin\libgcc_s_sjlj-1.dll", "$DependsPath\bin\libwinpthread-1.dll" "$LocalBuildPath\build\" -Force
-            if (-not $?) { return }
-        }
-        Copy-Item "$DependsPath\lib\gio\modules\*.dll" "$LocalBuildPath\build\gio-modules\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy plugins...'
-        Copy-Item "$DependsPath\plugins\platforms\qwindows*.dll" "$LocalBuildPath\build\platforms\" -Force
-        if (-not $?) { return }
-        Copy-Item "$DependsPath\plugins\styles\qmodernwindowsstyle*.dll" "$LocalBuildPath\build\styles\" -Force
-        if (-not $?) { return }
-        Copy-Item "$DependsPath\plugins\tls\*.dll" "$LocalBuildPath\build\tls\" -Force
-        if (-not $?) { return }
-        Copy-Item "$DependsPath\plugins\sqldrivers\qsqlite*.dll" "$LocalBuildPath\build\sqldrivers\" -Force
-        if (-not $?) { return }
-        Copy-Item "$DependsPath\plugins\imageformats\*.dll" "$LocalBuildPath\build\imageformats\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy GStreamer plugins...'
-        foreach ($Plug in 'gstadaptivedemux2.dll', 'gstaes.dll', 'gstaiff.dll', 'gstapetag.dll', 'gstapp.dll', 'gstasf.dll', 'gstasfmux.dll', 'gstasio.dll', 'gstaudioconvert.dll',
-            'gstaudiofx.dll', 'gstaudioparsers.dll', 'gstaudioresample.dll', 'gstautodetect.dll', 'gstbs2b.dll', 'gstcoreelements.dll', 'gstdash.dll', 'gstdsd.dll', 'gstdirectsound.dll',
-            'gstequalizer.dll', 'gstfaac.dll', 'gstfaad.dll', 'gstfdkaac.dll', 'gstflac.dll', 'gstgio.dll', 'gstgme.dll', 'gsthls.dll', 'gsticydemux.dll', 'gstid3demux.dll',
-            'gstid3tag.dll', 'gstisomp4.dll', 'gstlame.dll', 'gstlibav.dll', 'gstmpegpsdemux.dll', 'gstmpegpsmux.dll', 'gstmpegtsdemux.dll', 'gstmpegtsmux.dll', 'gstmpg123.dll',
-            'gstmusepack.dll', 'gstogg.dll', 'gstopenmpt.dll', 'gstopus.dll', 'gstopusparse.dll', 'gstpbtypes.dll', 'gstplayback.dll', 'gstreplaygain.dll', 'gstrtp.dll', 'gstrtsp.dll',
-            'gstsoup.dll', 'gstspectrum.dll', 'gstspeex.dll', 'gsttaglib.dll', 'gsttcp.dll', 'gsttwolame.dll', 'gsttypefindfunctions.dll', 'gstudp.dll', 'gstvolume.dll',
-            'gstvorbis.dll', 'gstwasapi.dll', 'gstwasapi2.dll', 'gstwaveform.dll', 'gstwavenc.dll', 'gstwavpack.dll', 'gstwavparse.dll', 'gstxingmux.dll') {
-            Copy-Item "$DependsPath\lib\gstreamer-1.0\$Plug" "$LocalBuildPath\build\gstreamer-plugins\" -Force
-            if (-not $?) { return }
-        }
-        if ($IncludeSpotify -eq 'ON') {
-            Copy-Item "$DependsPath\lib\gstreamer-1.0\gstspotify.dll" "$LocalBuildPath\build\gstreamer-plugins\" -Force
-            if (-not $?) { return }
-        }
         Write-Host -fo Cyan '    Copy resources...'
         Copy-Item "$LocalBuildPath\COPYING" "$LocalBuildPath\build\" -Force
         if (-not $?) { return }
@@ -3325,11 +3400,84 @@ Cflags: -I`${includedir}
             Copy-Item "$LocalBuildPath\dist\windows\*.$Type" "$LocalBuildPath\build\" -Force
             if (-not $?) { return }
         }
-        Write-Host -fo Cyan '    Copy MSVC redistributables...'
-        foreach ($Arch in '64', '86') {
-            Copy-Item "$DownloadPath\vc_redist.x$Arch.exe" "$LocalBuildPath\build\" -Force
+        Write-Host -fo Cyan '    Copy MSVC redistributable...'
+        Copy-Item "$DownloadPath\vc_redist.$BuildArch.exe" "$LocalBuildPath\build\" -Force
+        if (-not $?) { return }
+        Write-Host -fo Cyan '    Copy dependency binaries...'
+        [list[string]]$FileList = Get-DependenciesFromNsi -NSIFile "$LocalBuildPath\build\strawberry.nsi"
+        if (-not $? -or $FileList.Count -eq 0) { return }
+        $Sources = @{
+            'gstreamer-plugins' = "$DependsPath\lib\gstreamer-1.0"
+            'imageformats'      = "$DependsPath\plugins\imageformats"
+            'sqldrivers'        = "$DependsPath\plugins\sqldrivers"
+            'tls'               = "$DependsPath\plugins\tls"
+            'styles'            = "$DependsPath\plugins\styles"
+            'platforms'         = "$DependsPath\plugins\platforms"
+            'gio-modules'       = "$DependsPath\lib\gio\modules"
+            _DEFAULT            = "$DependsPath\bin\$Bin"
+            _SEARCH             = $DependsPath
+        }
+        $NeedSearch = [List[string]]::new()
+        foreach ($Dep in $FileList) {
+            if (Test-Path "$LocalBuildPath\build\$Dep") {
+                Write-Host -fo Green "    Dependency '$Dep' already exists in build path."
+                continue
+            }
+            if ($Dep -match '^(.+)\\' -and $Sources.ContainsKey($Matches[1])) {
+                $DirName = $Matches[1]
+                $SourcePath = Join-Path $Sources[$DirName] ($Dep -replace '^.+\\')
+                $PsCmdlet.WriteVerbose("        Expected source: $SourcePath")
+                $DestPath = Join-Path "$LocalBuildPath\build" $DirName
+            } elseif ($Dep -notmatch '\\') {
+                $SourcePath = Join-Path $Sources._DEFAULT $Dep
+                $PsCmdlet.WriteVerbose("        Expected source: $SourcePath")
+                $DestPath = "$LocalBuildPath\build"
+            } else {
+                Write-Host -fo Yellow "        No expected source found for '$Dep'."
+                $NeedSearch.Add($Dep)
+                continue
+            }
+            if (-not (Test-Path $SourcePath)) {
+                Write-Host -fo Yellow "    Source '$SourcePath' doesn't exist. Will search."
+                $NeedSearch.Add($Dep); continue
+            }
+            if (-not (Test-Path $DestPath)) { $null = New-Item -ItemType Directory $DestPath }
+            Write-Host -fo Gray "    Copy '$SourcePath' to '$DestPath'"
+            Copy-Item $SourcePath $DestPath -Force
             if (-not $?) { return }
         }
+        if ($NeedSearch.Count -gt 0) {
+            Write-Host -fo Yellow "    Number of dependencies with unknown source: $($NeedSearch.Count)"
+            $AllDeps = @{}
+            Get-ChildItem $Sources._SEARCH -Recurse -Force -File | ForEach-Object {
+
+                $AllDeps[$_.Name] = $_.FullName
+            }
+            foreach ($Dep in $NeedSearch) {
+                if (Test-Path "$LocalBuildPath\build\$Dep") {
+                    Write-Host -fo Green "    Dependency '$Dep' already exists in build path."
+                    continue
+                }
+                if (-not $AllDeps.ContainsKey($Dep)) {
+                    Write-Host -fo Red "    Strawberry dependency not found: '$Dep'."
+                    Write-Error 'Missing dependencies.'
+                    return
+                }
+                Write-Host -fo Green "    Found dependency '$Dep' at '$($AllDeps[$Dep])'."
+                $SourcePath = $AllDeps[$Dep]
+                $DirName = $Dep -replace '\\[^\\]+$'
+                if ([string]::IsNullOrWhiteSpace($DirName)) {
+                    $DestPath = Join-Path "$LocalBuildPath\build"
+                } else {
+                    $DestPath = Join-Path "$LocalBuildPath\build" $DirName
+                }
+                if (-not (Test-Path $DestPath)) { $null = New-Item -ItemType Directory $DestPath }
+                Write-Host -fo Gray "    Copy '$SourcePath' to '$DestPath'"
+                Copy-Item $SourcePath $DestPath -Force
+                if (-not $?) { return }
+            }
+        }
+
         Write-Host -fo Cyan '    Build NSIS installer...'
         makensis.exe "$LocalBuildPath\build\strawberry.nsi" | Out-Default
     }
@@ -3341,14 +3489,14 @@ Cflags: -I`${includedir}
     if ($QTDevMode) {
         $QTBaseVer = if ($QTDevMode) { "($(GetRepoCommit qtbase))" } else { $QT_VERSION }
         $QTToolsVer = if ($QTDevMode) { "($(GetRepoCommit qttools))" } else { $QT_VERSION }
-        $QTGrpcVer = if ($QTDevMode) { "($(GetRepoCommit qtgrpc))" } else { $QT_VERSION }
+        # $QTGrpcVer = if ($QTDevMode) { "($(GetRepoCommit qtgrpc))" } else { $QT_VERSION }
     } else {
         $QTBaseVer = $QTToolsVer = <# $QTGrpcVer =  #>$QT_VERSION
     }
     $BUILD_TARGETS = [ordered]@{
         "Yasm $YASM_VERSION"                            = 'BuildYasm', '*', "$DependsPath\bin\yasm.exe"
         "pkgconf $PKGCONF_VERSION"                      = 'BuildPkgConf', '*', "$DependsPath\bin\pkgconf.exe"
-        "mimalloc $MIMALLOC_VERSION"                    = 'BuildMimAlloc', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\mimalloc.pc"
+        # "mimalloc $MIMALLOC_VERSION"                    = 'BuildMimAlloc', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\mimalloc.pc"
         "getopt-win ($(GetRepoCommit getopt-win))"      = 'BuildGetOpt', '*', "$DependsPath\lib\getopt.lib"
         "zlib $ZLIB_VERSION"                            = 'BuildZlib', '*', "$DependsPath\lib\z.lib"
         "OpenSSL $OPENSSL_VERSION"                      = 'BuildOpenSSL', '*', "$DependsPath\lib\pkgconfig\openssl.pc"
@@ -3369,18 +3517,18 @@ Cflags: -I`${includedir}
         "Libxml2 $LIBXML2_VERSION"                      = 'BuildLibxml2', '*', "$DependsPath\lib\pkgconfig\libxml-2.0.pc"
         "Nghttp2 $NGHTTP2_VERSION"                      = 'BuildNghttp2', '*', "$DependsPath\lib\pkgconfig\libnghttp2.pc"
         "Libffi ($(GetRepoCommit libffi))"              = 'BuildLibffi', '*', "$DependsPath\lib\pkgconfig\libffi.pc"
-        "Libintl ($(GetRepoCommit proxy-libintl))"      = 'BuildLibintl', '*', "$DependsPath\lib\intl.lib"
+        # "Libintl ($(GetRepoCommit proxy-libintl))"      = 'BuildLibintl', '*', "$DependsPath\lib\intl.lib"
         "Dlfcn $DLFCN_VERSION"                          = 'BuildDlfcn', '*', "$DependsPath\include\dlfcn.h"
         "Libpsl $LIBPSL_VERSION"                        = 'BuildLibpsl', '*', "$DependsPath\lib\pkgconfig\libpsl.pc"
         "Orc $ORC_VERSION"                              = 'BuildOrc', '*', "$DependsPath\lib\pkgconfig\orc-0.4.pc"
-        "Libcurl $CURL_VERSION"                         = 'BuildLibcurl', '*', "$DependsPath\lib\pkgconfig\libcurl.pc"
+        # "Libcurl $CURL_VERSION"                         = 'BuildLibcurl', '*', "$DependsPath\lib\pkgconfig\libcurl.pc"
         "Sqlite $SQLITE3_VERSION"                       = 'BuildSqlite', '*', "$DependsPath\lib\pkgconfig\sqlite3.pc"
         "Glib $GLIB_VERSION"                            = 'BuildGlib', '*', "$DependsPath\lib\pkgconfig\glib-2.0.pc"
         # "Libproxy $LIBPROXY_VERSION"                    = 'BuildLibproxy', '*', "$DependsPath\lib\libproxy.lib" # Doesn't compile with MSVC
         "Libsoup $LIBSOUP_VERSION"                      = 'BuildLibsoup', '*', "$DependsPath\lib\pkgconfig\libsoup-3.0.pc"
         "GlibNetworking $GLIB_NETWORKING_VERSION"       = 'BuildGlibNetworking', '*', "$DependsPath\lib\gio\modules\gioopenssl.lib"
         "Freetype $FREETYPE_VERSION"                    = 'BuildFreetype', '*', "$DependsPath\lib\freetype.lib"
-        "Cairo $CAIRO_VERSION"                          = 'BuildCairo', '*', "$DependsPath\lib\pkgconfig\cairo.pc"
+        # "Cairo $CAIRO_VERSION"                          = 'BuildCairo', '*', "$DependsPath\lib\pkgconfig\cairo.pc"
         "Harfbuzz $HARFBUZZ_VERSION"                    = 'BuildHarfbuzz', '*', "$DependsPath\lib\harfbuzz*.lib"
         "Libogg $LIBOGG_VERSION"                        = 'BuildLibogg', '*', "$DependsPath\lib\pkgconfig\ogg.pc"
         "Libvorbis $LIBVORBIS_VERSION"                  = 'BuildLibvorbis', '*', "$DependsPath\lib\pkgconfig\vorbis.pc"
@@ -3411,18 +3559,18 @@ Cflags: -I`${includedir}
         "Gstpluginsbad $GSTREAMER_VERSION"              = 'BuildGstpluginsbad', '*', "$DependsPath\lib\pkgconfig\gstreamer-plugins-bad-1.0.pc"
         "Gstpluginsugly $GSTREAMER_VERSION"             = 'BuildGstpluginsugly', '*', "$DependsPath\lib\gstreamer-1.0\gstasf.lib"
         "Gstlibav $GSTREAMER_VERSION"                   = 'BuildGstlibav', '*', "$DependsPath\lib\gstreamer-1.0\gstlibav.lib"
-        "Gstspotify $GSTREAMER_PLUGINS_RS_VERSION"      = 'BuildGstspotify', 'x64', "$DependsPath\lib\pkgconfig\gstspotify.pc"
-        "Abseil $ABSEIL_VERSION"                        = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc"
-        "Protobuf $PROTOBUF_VERSION"                    = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"
+        "Gstspotify $GSTREAMER_PLUGINS_RS_VERSION"      = 'BuildGstspotify', 'x64', "$DependsPath\lib\gstreamer-1.0\gstspotify.dll"
+        # "Abseil $ABSEIL_VERSION"                        = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc"
+        # "Protobuf $PROTOBUF_VERSION"                    = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"
         "Qtbase $QTBaseVer"                             = 'BuildQtbase', '*', "$DependsPath\bin\qt-configure-module.bat"
         "Qttools $QTToolsVer"                           = 'BuildQttools', '*', "$DependsPath\lib\cmake\Qt6Linguist\Qt6LinguistConfig.cmake"
+        # "Qtgrpc $QTGrpcVer"                             = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"
         "Sparsehash $SPARSEHASH_VERSION"                = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
         "Rapidjson ($(GetRepoCommit rapidjson))"        = 'BuildRapidjson', '*', "$DependsPath\lib\cmake\RapidJSON\RapidJSONConfig.cmake"
-        "Qtgrpc $QTGrpcVer"                             = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"
         "Qtsparkle ($(GetRepoCommit qtsparkle))"        = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
         "KDsingleapp $KDSINGLEAPPLICATION_VERSION"      = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
-        "Glew $GLEW_VERSION"                            = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
-        "Libprojectm $LIBPROJECTM_VERSION"              = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
+        # "Glew $GLEW_VERSION"                            = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
+        # "Libprojectm $LIBPROJECTM_VERSION"              = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
         "Gettext $GETTEXT_VERSION"                      = 'BuildGettext', '*', "$DependsPath\bin\gettext.exe"
         "Tinysvcmdns ($(GetRepoCommit tinysvcmdns))"    = 'BuildTinysvcmdns', '*', "$DependsPath\lib\pkgconfig\tinysvcmdns.pc"
         "Pe-parse $PE_PARSE_VERSION"                    = 'BuildPeParse', '*', "$DependsPath\lib\pe-parse.lib"
@@ -3461,6 +3609,11 @@ Cflags: -I`${includedir}
                     break
                 }
             }
+        }
+        if (-not $FromScratch -and $NeedsBuild -and $Target -notmatch '^Strawberry ') {
+            [void]$Skip.Add($Target)
+            Write-Host -fo Gray ('{0,-80}{1}' -f "${Target}...  ", 'SKIP (no -FromScratch)')
+            continue TargetLoop
         }
         Write-Host -fo White ('{0,-80}' -f "${Target}...  ") -NoNewline
         if ($NeedsBuild) {
@@ -3515,9 +3668,9 @@ Cflags: -I`${includedir}
                     }
                 }
         }
-        Write-Host -fo Yellow "Dependencies extracted and retargeted to $DependsPath. Please run the script again to recalculate build steps."
-        $OverallSuccess = $true
-        return
+        # Write-Host -fo Yellow "Dependencies extracted and retargeted to $DependsPath. Please run the script again to recalculate build steps."
+        # $OverallSuccess = $true
+        # return
     }
     if ($DependsPath -ne "C:\$DefaultName" -and -not (Test-Path "C:\$DefaultName")) {
         $null = New-Item -ItemType Junction -Path "C:\$DefaultName" -Value $DependsPath

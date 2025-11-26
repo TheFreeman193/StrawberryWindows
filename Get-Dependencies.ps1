@@ -32,7 +32,7 @@ begin {
     $LIBICONV_BRANCH = 'master'
     $QTSPARKLE_BRANCH = 'master'
     $LIBFFI_BRANCH = 'meson'
-    $LIBINTL_BRANCH = 'master'
+    # $LIBINTL_BRANCH = 'master'
     $GSTREAMER_BRANCH = 'main'
     $GSTSPOTIFY_BRANCH = 'main'
     $GETOPT_BRANCH = 'getopt_glibc_2.42_port'
@@ -43,9 +43,6 @@ begin {
     $GNUTLS_BRANCH = 'master'
     $PEUTIL_BRANCH = 'master'
     $STRAWBERRY_REPO_BRANCH = 'master'
-    $STRAWBERRY_REPO_COMMIT = 'b06b59d0c586593d06f005f791735b8c60df6519'
-    $MSVC_DEPS_REPO_COMMIT = '84058cb58f2279a9e609c0a943fcea9490811777'
-    $MSVC_DEPS_REPO_RELEASE = '19587916258'
 
     if (-not (Test-Path $VersionFile)) {
         $VersionScript = Get-Item (Join-Path $PSScriptRoot 'Get-Versions.ps1')
@@ -275,6 +272,10 @@ sparsehash-msvc.patch                  = 138f6567120e233329f26a1ee2485b574603956
 speex-cmake.patch                      = 87e17e7f57660bf884bdf106bbf32972a96bbf4131b2014483f9e14779af9fa1
 twolame.patch                          = ad0bf19387e842ce6070a7a812a80237b16591441f6b822909722d3870a01c88
 yasm-cmake.patch                       = a0c6f4becb5314dbfcf3f845e143bbaf80c216a76612f5e6cb968d3ee1a795b8
+strawberry-msvc-x86-release.tar.xz     = 0586e77b3b0dee8c341ab3cf43c948503c08f1d615c9a28a98c6dee367d6a541
+strawberry-msvc-x86-debug.tar.xz       = ca74007db56f99a573871b6807afd5496de9459462b1a401e44523603f90c52c
+strawberry-msvc-x86_64-release.tar.xz  = e1c4aa34dc529713d376d2a46917ac35a981a3ec4380798f094dd60cb0f64f96
+strawberry-msvc-x86_64-debug.tar.xz    = c4f1be9663fb7e13bf837e06638c8eea2b276ad94c108444dda04eaf824630db
 '@
 
     $SIGNED_FILES = @'
@@ -289,12 +290,11 @@ vc_redist.x86.exe
 
     $BaseTargets = @"
 https://github.com/projectM-visualizer/projectm/releases/download/v${LIBPROJECTM_VERSION}/libprojectm-${LIBPROJECTM_VERSION}.tar.gz
-https://downloads.sourceforge.net/project/glew/glew/${GLEW_VERSION}/glew-${GLEW_VERSION}.tgz
-https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-${PROTOBUF_VERSION}.tar.gz
+# https://downloads.sourceforge.net/project/glew/glew/${GLEW_VERSION}/glew-${GLEW_VERSION}.tgz
+# https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-${PROTOBUF_VERSION}.tar.gz
 https://github.com/abseil/abseil-cpp/archive/refs/tags/${ABSEIL_VERSION}/abseil-cpp-${ABSEIL_VERSION}.tar.gz
-https://cairographics.org/releases/cairo-${CAIRO_VERSION}.tar.xz
 https://github.com/curl/curl/releases/download/curl-${CURL_VERSION_UNDERSCORE}/curl-${CURL_VERSION}.tar.gz
-https://github.com/microsoft/mimalloc/archive/refs/tags/v${MIMALLOC_VERSION}/mimalloc-${MIMALLOC_VERSION}.tar.gz
+# https://github.com/microsoft/mimalloc/archive/refs/tags/v${MIMALLOC_VERSION}/mimalloc-${MIMALLOC_VERSION}.tar.gz
 https://github.com/git-for-windows/git/releases/download/v${GIT_VERSION}.windows.1/Git-${GIT_VERSION}-64-bit.exe
 https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-windows-x86_64.msi
 https://www.nasm.us/pub/nasm/releasebuilds/${NASM_VERSION}/win64/nasm-${NASM_VERSION}-installer-x64.exe
@@ -309,7 +309,7 @@ https://github.com/DigitalMediaServer/LockedList/releases/download/v${NSISLOCKED
 https://nsis.sourceforge.io/mediawiki/images/${NSISREGISTRY_VERSION}/Registry.zip
 # https://nsis.sourceforge.io/mediawiki/images/${NSISINETCOLD_VERSION}/Inetc.zip
 https://github.com/DigitalMediaServer/NSIS-INetC-plugin/releases/download/v${NSISINETC_VERSION}/InetC.zip
-https://files.jkvinge.net/winbins/sed.exe
+# https://files.jkvinge.net/winbins/sed.exe
 https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
 https://aka.ms/vs/${MSVC_VERSION}/release/vc_redist.x86.exe
 https://aka.ms/vs/${MSVC_VERSION}/release/vc_redist.x64.exe
@@ -371,7 +371,7 @@ https://github.com/acoustid/chromaprint/releases/download/v${CHROMAPRINT_VERSION
 https://download.gnome.org/sources/glib/$($GLIB_VERSION -replace '\.\d+$')/glib-${GLIB_VERSION}.tar.xz
 https://download.gnome.org/sources/glib-networking/$($GLIB_NETWORKING_VERSION -replace '\.\d+$')/glib-networking-${GLIB_NETWORKING_VERSION}.tar.xz
 https://github.com/rockdaboot/libpsl/releases/download/${LIBPSL_VERSION}/libpsl-${LIBPSL_VERSION}.tar.gz
-https://github.com/libproxy/libproxy/archive/refs/tags/${LIBPROXY_VERSION}/libproxy-${LIBPROXY_VERSION}.tar.gz
+# https://github.com/libproxy/libproxy/archive/refs/tags/${LIBPROXY_VERSION}/libproxy-${LIBPROXY_VERSION}.tar.gz
 https://download.gnome.org/sources/libsoup/$($LIBSOUP_VERSION -replace '\.\d+$')/libsoup-${LIBSOUP_VERSION}.tar.xz
 https://gstreamer.freedesktop.org/src/orc/orc-${ORC_VERSION}.tar.xz
 https://files.musepack.net/source/musepack_src_r${MUSEPACK_VERSION}.tar.gz
@@ -389,23 +389,23 @@ https://gstreamer.freedesktop.org/src/gst-plugins-ugly/gst-plugins-ugly-${GSTREA
 https://gstreamer.freedesktop.org/src/gst-libav/gst-libav-${GSTREAMER_VERSION}.tar.xz
 https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-${PROTOBUF_VERSION}.tar.gz
 https://downloads.sourceforge.net/project/glew/glew/${GLEW_VERSION}/glew-${GLEW_VERSION}.tgz
-https://github.com/projectM-visualizer/projectm/releases/download/v${LIBPROJECTM_VERSION}/libprojectm-${LIBPROJECTM_VERSION}.tar.gz
+# https://github.com/projectM-visualizer/projectm/releases/download/v${LIBPROJECTM_VERSION}/libprojectm-${LIBPROJECTM_VERSION}.tar.gz
 https://github.com/libexpat/libexpat/releases/download/R_${EXPAT_VERSION_UNDERSCORE}/expat-${EXPAT_VERSION}.tar.bz2
 https://downloads.sourceforge.net/project/freetype/freetype2/${FREETYPE_VERSION}/freetype-${FREETYPE_VERSION}.tar.gz
 # https://github.com/unicode-org/icu/releases/download/release-${ICU4C_VERSION_DASH}/icu4c-${ICU4C_VERSION_UNDERSCORE}-src.zip
 https://github.com/unicode-org/icu/releases/download/release-${ICU4C_VERSION}/icu4c-${ICU4C_VERSION}-sources.zip
-https://cairographics.org/releases/cairo-${CAIRO_VERSION}.tar.xz
+# https://cairographics.org/releases/cairo-${CAIRO_VERSION}.tar.xz
 https://github.com/harfbuzz/harfbuzz/releases/download/${HARFBUZZ_VERSION}/harfbuzz-${HARFBUZZ_VERSION}.tar.xz
 https://download.qt.io/official_releases/qt/$($QT_VERSION -replace '\.\d+$')/${QT_VERSION}/submodules/qtbase-everywhere-src-${QT_VERSION}.tar.xz
 https://download.qt.io/official_releases/qt/$($QT_VERSION -replace '\.\d+$')/${QT_VERSION}/submodules/qttools-everywhere-src-${QT_VERSION}.tar.xz
-https://download.qt.io/official_releases/qt/$($QT_VERSION -replace '\.\d+$')/${QT_VERSION}/submodules/qtgrpc-everywhere-src-${QT_VERSION}.tar.xz
+# https://download.qt.io/official_releases/qt/$($QT_VERSION -replace '\.\d+$')/${QT_VERSION}/submodules/qtgrpc-everywhere-src-${QT_VERSION}.tar.xz
 https://github.com/libgme/game-music-emu/releases/download/${LIBGME_VERSION}/libgme-${LIBGME_VERSION}-src.tar.gz
 https://downloads.sourceforge.net/twolame/twolame-${TWOLAME_VERSION}.tar.gz
 https://github.com/sparsehash/sparsehash/archive/refs/tags/sparsehash-${SPARSEHASH_VERSION}.tar.gz
 https://github.com/Tencent/rapidjson/archive/refs/tags/v${RAPIDJSON_VERSION}/rapidjson-${RAPIDJSON_VERSION}.tar.gz
-https://github.com/abseil/abseil-cpp/archive/refs/tags/${ABSEIL_VERSION}/abseil-cpp-${ABSEIL_VERSION}.tar.gz
+# https://github.com/abseil/abseil-cpp/archive/refs/tags/${ABSEIL_VERSION}/abseil-cpp-${ABSEIL_VERSION}.tar.gz
 https://github.com/KDAB/KDSingleApplication/releases/download/v${KDSINGLEAPPLICATION_VERSION}/kdsingleapplication-${KDSINGLEAPPLICATION_VERSION}.tar.gz
-https://github.com/curl/curl/releases/download/curl-${CURL_VERSION_UNDERSCORE}/curl-${CURL_VERSION}.tar.gz
+# https://github.com/curl/curl/releases/download/curl-${CURL_VERSION_UNDERSCORE}/curl-${CURL_VERSION}.tar.gz
 https://github.com/mlocati/gettext-iconv-windows/releases/download/v${GETTEXT_VERSION}-v${ICONV_VERSION}/gettext${GETTEXT_VERSION}-iconv${ICONV_VERSION}-static-64.zip
 https://github.com/mlocati/gettext-iconv-windows/releases/download/v${GETTEXT_VERSION}-v${ICONV_VERSION}/gettext${GETTEXT_VERSION}-iconv${ICONV_VERSION}-static-32.zip
 https://github.com/trailofbits/pe-parse/archive/refs/tags/v${PE_PARSE_VERSION}/pe-parse-${PE_PARSE_VERSION}.tar.gz
@@ -435,7 +435,7 @@ https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/d
         $REPO_TARGETS['https://github.com/pffang/libiconv-for-Windows'] = $LIBICONV_BRANCH
         $REPO_TARGETS['https://gitlab.freedesktop.org/gstreamer/meson-ports/libffi'] = $LIBFFI_BRANCH
         $REPO_TARGETS['https://gitlab.freedesktop.org/gstreamer/meson-ports/ffmpeg'] = "meson-$FFMPEG_VERSION"
-        $REPO_TARGETS['https://github.com/frida/proxy-libintl'] = $LIBINTL_BRANCH
+        # $REPO_TARGETS['https://github.com/frida/proxy-libintl'] = $LIBINTL_BRANCH
         $REPO_TARGETS['https://github.com/ludvikjerabek/getopt-win'] = $GETOPT_BRANCH
         $REPO_TARGETS['https://github.com/Tencent/rapidjson'] = $RAPIDJSON_BRANCH
         $REPO_TARGETS['https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs'] = $GSTSPOTIFY_BRANCH, $GSTREAMER_PLUGINS_RS_VERSION
@@ -444,7 +444,7 @@ https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/d
         if ($QTDevMode) {
             $REPO_TARGETS['https://code.qt.io/qt/qtbase.git'] = $QT_DEV_BRANCH
             $REPO_TARGETS['https://code.qt.io/qt/qttools.git'] = $QT_DEV_BRANCH
-            $REPO_TARGETS['https://code.qt.io/qt/qtgrpc.git'] = $QT_DEV_BRANCH
+            # $REPO_TARGETS['https://code.qt.io/qt/qtgrpc.git'] = $QT_DEV_BRANCH
         }
         if ($GStreamerDevMode) {
             $REPO_TARGETS['https://gitlab.freedesktop.org/gstreamer/gstreamer'] = $GSTREAMER_BRANCH

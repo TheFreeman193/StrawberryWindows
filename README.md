@@ -26,15 +26,15 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 
 - [Strawberry Source Code](https://github.com/strawberrymusicplayer/strawberry)
 - [Strawberry MSVC Build Tools](https://github.com/strawberrymusicplayer/strawberry-msvc)
-- [Strawberry MSVC Dependency Patches](https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies)
+- [Strawberry MSVC Dependencies & Patches](https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies)
 
 ## Build Environment
 
 - Windows 10 Enterprise LTSC on Hyper-V assigned with:
   - 8c Intel 9th Gen @ 4.8 GHz, 8-64 GB dynamically allocated RAM @ 3600 MT/s
   - 64 GB boot disk, 32 GB RAM disk for staging/build targets
-- PowerShell 7.4 LTS
-- Visual Studio 2022 Community
+- PowerShell 7.5.4
+- Visual Studio 2022 Community 17.14.20
   - C++ core module
   - MSVC v143
   - C++ ATL for MSVC v143
@@ -42,13 +42,13 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
   - C++ profiling tools
   - C++ CMake tools for Win64
   - C++ AddressSanitizer
-  - Windows 11 SDK 10.0.22621.0
+  - Windows 11 SDK 10.0.22621.7
   - vcpkg manager
 - Git for Windows 2.51.2
 - Qt 6 build tools for VS2022
 - CMake 4.1.2
 - Meson Build 1.8.2
-- NASM 2.16.03
+- NASM 3.01
 - Strawberry Perl 5.42.0
 - Python 3.14.0b1
 - 7-Zip 25.01
