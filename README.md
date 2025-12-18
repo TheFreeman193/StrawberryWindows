@@ -30,11 +30,11 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 
 ## Build Environment
 
-- Windows 10 Enterprise LTSC on Hyper-V assigned with:
+- Windows 10 Enterprise LTSC 10.0.19044.0 on Hyper-V assigned with:
   - 8c Intel 9th Gen @ 4.8 GHz, 8-64 GB dynamically allocated RAM @ 3600 MT/s
   - 64 GB boot disk, 32 GB RAM disk for staging/build targets
 - PowerShell 7.5.4
-- Visual Studio 2022 Community 17.14.20
+- Visual Studio 2022 Community 17.14.23
   - C++ core module
   - MSVC v143
   - C++ ATL for MSVC v143
@@ -44,9 +44,9 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
   - C++ AddressSanitizer
   - Windows 11 SDK 10.0.22621.7
   - vcpkg manager
-- Git for Windows 2.51.2
+- Git for Windows 2.52.0
 - Qt 6 build tools for VS2022
-- CMake 4.1.2
+- CMake 4.2.1
 - Meson Build 1.8.2
 - NASM 3.01
 - Strawberry Perl 5.42.0
@@ -54,7 +54,7 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 - 7-Zip 25.01
 - WinFlex 2.6.4
 - WinBison 3.7.4
-- Rust Compiler 1.89.0
+- Rust Compiler 1.92.0
 - NSIS 3.11
   - LockedList Plugin (DigitalMediaServer fork) 3.1.0.0
   - Registry Plugin 4.2
