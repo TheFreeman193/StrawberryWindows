@@ -284,10 +284,10 @@ sparsehash-msvc.patch                  = 138f6567120e233329f26a1ee2485b574603956
 speex-cmake.patch                      = 87e17e7f57660bf884bdf106bbf32972a96bbf4131b2014483f9e14779af9fa1
 twolame.patch                          = ad0bf19387e842ce6070a7a812a80237b16591441f6b822909722d3870a01c88
 yasm-cmake.patch                       = a0c6f4becb5314dbfcf3f845e143bbaf80c216a76612f5e6cb968d3ee1a795b8
-strawberry-msvc-x86-release.tar.xz     = 669191f80c27328685fb509166736cf296e9a4b197cffb8b0deb4f5b8c51b39c
-strawberry-msvc-x86-debug.tar.xz       = d7e5c69d40121f8b30d18e972e1f62a82e2ca298f07d944871735971b757c121
-strawberry-msvc-x86_64-release.tar.xz  = 27691a31130d85e165777d14507aca8129bebe09c938a4be29d585630a44b1df
-strawberry-msvc-x86_64-debug.tar.xz    = 60dccd66025bb778ea07e4f62b5f891ef1ae5695501e0afbf92dd4cd94579f19
+strawberry-msvc-x86-release.tar.xz     = 7e7f2fcf5bceef322b8ebee7784f8fcc0aa996c50070f7371d04c2f902317e15
+strawberry-msvc-x86-debug.tar.xz       = 2102f6db806932c2d331b30476fdb42920431d0b2c9381bbea60adb8ac873c28
+strawberry-msvc-x86_64-release.tar.xz  = 3ae36803df85bcd5c191dd4f7c26450f4595ffc8e1f3291357ca176dc5534413
+strawberry-msvc-x86_64-debug.tar.xz    = 75d2993f3d9ac7fa907a30c36e26f816d6e42464f48584db4be1b5729d4bce51
 '@
 
     $SIGNED_FILES = @'

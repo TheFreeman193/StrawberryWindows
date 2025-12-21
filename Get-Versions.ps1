@@ -5,9 +5,9 @@ using namespace System.Collections.Specialized
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
     [string]$MsvcCommit = 'e2e67d591dfec174219e46891600480483746083', # https://github.com/strawberrymusicplayer/strawberry-msvc/commits/master/
-    [string]$MsvcDepsCommit = 'bdb6059328fc88c2957fe42a46f686ff7945c463', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
-    [string]$MsvcDepsRelease = '20314061060', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
-    [string]$StrawberryCommit = 'ac31d79294a4977d0c1e286b2a0b72d09a4ecedd' # https://github.com/strawberrymusicplayer/strawberry/commits/master/
+    [string]$MsvcDepsCommit = '9682a1f72ba2961a1bc5ed4f89eb0fe53dd9bec6', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
+    [string]$MsvcDepsRelease = '20395086427', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
+    [string]$StrawberryCommit = '8d262959c1a1fdc749369e9ad3a7f9c6106d6b61' # https://github.com/strawberrymusicplayer/strawberry/commits/master/
 )
 process {
     $VersionTemp = New-TemporaryFile
