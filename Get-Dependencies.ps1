@@ -119,6 +119,7 @@ gst-libav-1.26.5.tar.xz                = d6de05884ef42376dd8cde89940f7b50ced96f4
 gst-libav-1.26.7.tar.xz                = 91d4a7a14527d97fe0ce7ccedb3554e8f692b216429ef2b1850944bbf5435c09
 gst-libav-1.26.8.tar.xz                = d8610d88026cc4927eb013e46ecf505f73ee946ec8b8fd5aee5b3ae4614a5d59
 gst-libav-1.26.9.tar.xz                = 08a8e944fc61ef26df515784a089c8ac41765304a5d55b98199835b28a98dbdf
+gst-libav-1.26.10.tar.xz               = c8c2fd29cc063a6d26c314cd1a0a3a3060c8a029981b9520fab52c4206d11611
 gst-plugins-bad-1.26.1.tar.xz          = 9b8415b1bb3726a499578fb39907952981716643f660215fe68628fbd8629197
 gst-plugins-bad-1.26.2.tar.xz          = cb116bfc3722c2de53838899006cafdb3c7c0bc69cd769b33c992a8421a9d844
 gst-plugins-bad-1.26.3.tar.xz          = 95c48dacaf14276f4e595f4cbca94b3cfebfc22285e765e2aa56d0a7275d7561
@@ -126,6 +127,7 @@ gst-plugins-bad-1.26.5.tar.xz          = 9890f262f3b2a9564dcb629e9eb697d77b93d1f
 gst-plugins-bad-1.26.7.tar.xz          = a0ab17dddd4c029ecd7a423c30badd5a3c7599ea42707016d1d57545f5723ccf
 gst-plugins-bad-1.26.8.tar.xz          = 25c05be5eb0694bde3ecd3317516f5d0d6e4ad21125a5ebcf6fb644a4c92439f
 gst-plugins-bad-1.26.9.tar.xz          = a96bfb68c53a7c9ab1ae279eac7c101f4204fb5c0e4729683b2be64261707446
+gst-plugins-bad-1.26.10.tar.xz         = fec973dff512b507d9dcb5a828e04e061e52188f4d5989e953aed6a41beda437
 gst-plugins-base-1.26.1.tar.xz         = 659553636f84dcf388cad5cf6530e02b0b2d3dc450e76199287ba9db6a6c5226
 gst-plugins-base-1.26.2.tar.xz         = f4b9fc0be852fe5f65401d18ae6218e4aea3ff7a3c9f8d265939b9c4704915f7
 gst-plugins-base-1.26.3.tar.xz         = 4ef9f9ef09025308ce220e2dd22a89e4c992d8ca71b968e3c70af0634ec27933
@@ -133,6 +135,7 @@ gst-plugins-base-1.26.5.tar.xz         = f0c0e26cbedaa57732cb6a578e8cc13a1164bf1
 gst-plugins-base-1.26.7.tar.xz         = 969e3cbf05dfab92cf37e94840fbe398517d7ba3275331d1c216a2e30a7208d0
 gst-plugins-base-1.26.8.tar.xz         = 513cace4b02cb183ee47665d64bb2a25088abb6678c4cc57bb100b841add746b
 gst-plugins-base-1.26.9.tar.xz         = 11db4ec9ae5be2194ff8ccf2b5fecdc069252fe4416921b083a921ef71dd000a
+gst-plugins-base-1.26.10.tar.xz        = 1c1531dd8f2d480c89c57b08a930545a3375077391789762e40e490cdbbf03fd
 gst-plugins-good-1.26.1.tar.xz         = fcdcb2f77620a599557b2843d1c6c55c2b660f5fc28222b542847d11d9ca982f
 gst-plugins-good-1.26.2.tar.xz         = d864b9aec28c3a80895468c909dd303e5f22f92d6e2b1137f80e2a1454584339
 gst-plugins-good-1.26.3.tar.xz         = fe4ec9670edfe6bb1e5f27169ae145b5ac2dd218ac98bd8251c8fba41ad33c53
@@ -140,6 +143,7 @@ gst-plugins-good-1.26.5.tar.xz         = eb0862e93404b073e98ec50350ece7e6685ea29
 gst-plugins-good-1.26.7.tar.xz         = 82af18a1f3e4a060db61d2630fbb975269b80b55bb2fdcfddfab5c6440d30781
 gst-plugins-good-1.26.8.tar.xz         = 061e84efae31dfb4d96e4517659aca82bad9d5625b8f64d3290604385edd1d14
 gst-plugins-good-1.26.9.tar.xz         = f38566fb53ae56b7019a039475311756a28eb978a781154d67813dcb551ff5fe
+gst-plugins-good-1.26.10.tar.xz        = 7beacb5daba3c6751ebc1c85017d9b1d6de64e24798125932c73c8b1dbeb3bc9
 gst-plugins-ugly-1.26.1.tar.xz         = 34d9bcec8e88b008839d8de33fb043ae75eb04e466df74066fd66ee487a8ec4f
 gst-plugins-ugly-1.26.2.tar.xz         = ec2d7556c6b8c2694f9b918ab9c4c6c998fb908c6b6a6ad57441702dad14ce73
 gst-plugins-ugly-1.26.3.tar.xz         = 417f5ee895f734ac0341b3719c175fff16b4c8eae8806e29e170b3bcb3d9dba5
@@ -147,6 +151,7 @@ gst-plugins-ugly-1.26.5.tar.xz         = 3dfc43435be97e110816bac6d602b0f206a0385
 gst-plugins-ugly-1.26.7.tar.xz         = 11f2e4f34bb2e841dc60edc95581572bc47be0c11e577d12bed98bb1f80a661b
 gst-plugins-ugly-1.26.8.tar.xz         = ed3c687290dd4d0cc1681f6fb3f59c57c8cfc765fa22eba16a7d09566cc5c7e1
 gst-plugins-ugly-1.26.9.tar.xz         = 184e4c6e765bc463ed806b2263cb9b2aaa3a65415df0a3c22fd520d5d1bacb4d
+gst-plugins-ugly-1.26.10.tar.xz        = b2c648ef62cbf03cdc215f55dca01e2e8372983d8c88de3fa03671ddf08d7d14
 gstreamer-1.26.1.tar.xz                = 30a4c4a5e48345583eb596aa265d0f53c0feb93011d93a6aaa70dd6e3c519dc4
 gstreamer-1.26.2.tar.xz                = f75334a3dff497c240844304a60015145792ecc3b6b213ac19841ccbd6fdf0ad
 gstreamer-1.26.3.tar.xz                = dc661603221293dccc740862425eb54fbbed60fb29d08c801d440a6a3ff82680
@@ -154,10 +159,12 @@ gstreamer-1.26.5.tar.xz                = 0a7edb0e7b42dbe6b575fce61a4808a3f6b20e0
 gstreamer-1.26.7.tar.xz                = 18a5e214114dc501407697dd458514bba62cadd5414c60f793cf70141a4d0bb3
 gstreamer-1.26.8.tar.xz                = 2348e837464c3cb7423b79fc1cc8c4c994c74603443bd97d14edc6cd5ca7db13
 gstreamer-1.26.9.tar.xz                = 8ee8772e468102ebe86d414d8c4c7440dd91d9f3e9396952ff23aecde80670c8
+gstreamer-1.26.10.tar.xz               = d7f20bec75edeb8677662926c33e987da64a42616c24fc3353b9ad44ed750cd6
 harfbuzz-11.2.1.tar.xz                 = 093714c8548a285094685f0bdc999e202d666b59eeb3df2ff921ab68b8336a49
 harfbuzz-11.3.3.tar.xz                 = e1fbca6b32a91ae91ecd9eb2ca8d47a5bfe2b1cb2e54855ab7a0b464919ef358
 harfbuzz-12.1.0.tar.xz                 = e5c81b7f6e0b102dfb000cfa424538b8e896ab78a2f4b8a5ec8cae62ab43369e
 harfbuzz-12.2.0.tar.xz                 = ecb603aa426a8b24665718667bda64a84c1504db7454ee4cadbd362eea64e545
+harfbuzz-12.3.0.tar.xz                 = 8660ebd3c27d9407fc8433b5d172bafba5f0317cb0bb4339f28e5370c93d42b7
 icu4c-77_1-src.zip                     = d5cf533cf70cd49044d89eda3e74880328eb9426e6fd2b3cc8f9a963d2ad480e
 icu4c-78.1-sources.zip                 = fe027bcd7e52ab3f3bbbb2d5e9ff9c674e94bbe671bb6a8f58719f27485864da
 InetC.zip                              = b01077e56ebb19c005b45d40f837958ca6a92f51a5a937dc1bb497c7c7f2aa93
@@ -199,6 +206,7 @@ mpg123-1.32.10.tar.bz2                 = 87b2c17fe0c979d3ef38eeceff6362b35b28ac8
 mpg123-1.33.0.tar.bz2                  = 2290e3aede6f4d163e1a17452165af33caad4b5f0948f99429cfa2d8385faa9d
 mpg123-1.33.2.tar.bz2                  = 2c54fabbfa696dce8f9b137c8ef7a429a061f8fe633cd7d0a511809855f2c219
 mpg123-1.33.3.tar.bz2                  = 6a0c6472dd156e213c2068f40115ebbb73978c2d873e66bae2a250e2d2198d26
+mpg123-1.33.4.tar.bz2                  = 3ae8c9ff80a97bfc0e22e89fbcd74687eca4fc1db315b12607f27f01cb5a47d9
 musepack_src_r475.tar.gz               = a4b1742f997f83e1056142d556a8c20845ba764b70365ff9ccf2e3f81c427b2b
 nasm-2.16.03-installer-x64.exe         = 657e1252676cfb26a008835c20a760f731c8e0414469a4ed0f83f0fb059cdd35
 nasm-3.01-installer-x64.exe            = 7881e9febc8b6558581041019b7890f109bef0694d93ed82c9589794c7b5a600
@@ -259,6 +267,7 @@ taglib-2.1.tar.gz                      = 95b788b39eaebab41f7e6d1c1d05ceee01a5d12
 twolame-0.4.0.tar.gz                   = cc35424f6019a88c6f52570b63e1baf50f62963a3eac52a03a800bb070d7c87d
 utfcpp-4.0.6.tar.gz                    = 6920a6a5d6a04b9a89b2a89af7132f8acefd46e0c2a7b190350539e9213816c0
 utfcpp-4.0.8.tar.gz                    = f808b26d8c3a59def27fea207182ece77a8930bd121a69f80d328ecf3cfef925
+utfcpp-4.09.tar.gz                     = 0902218f606e942ccc10724df8a988fc993c12da4b3adeace28a7f0211970e08
 VSYASM.zip                             = ec99229ba3ea6f0a0db3c15647266588db3c605301ff3b78bbf427d6657277d5
 wavpack-5.8.0.tar.bz2                  = d2079e339582d43a0ee58626d9ed5e2d46c6886e788700093faf3753db68e6cd
 wavpack-5.8.1.tar.bz2                  = 7bd540ed92d2d1bf412213858a9e4f1dfaf6d9a614f189b0622060a432e77bbf
@@ -284,10 +293,10 @@ sparsehash-msvc.patch                  = 138f6567120e233329f26a1ee2485b574603956
 speex-cmake.patch                      = 87e17e7f57660bf884bdf106bbf32972a96bbf4131b2014483f9e14779af9fa1
 twolame.patch                          = ad0bf19387e842ce6070a7a812a80237b16591441f6b822909722d3870a01c88
 yasm-cmake.patch                       = a0c6f4becb5314dbfcf3f845e143bbaf80c216a76612f5e6cb968d3ee1a795b8
-strawberry-msvc-x86-release.tar.xz     = 7e7f2fcf5bceef322b8ebee7784f8fcc0aa996c50070f7371d04c2f902317e15
-strawberry-msvc-x86-debug.tar.xz       = 2102f6db806932c2d331b30476fdb42920431d0b2c9381bbea60adb8ac873c28
-strawberry-msvc-x86_64-release.tar.xz  = 3ae36803df85bcd5c191dd4f7c26450f4595ffc8e1f3291357ca176dc5534413
-strawberry-msvc-x86_64-debug.tar.xz    = 75d2993f3d9ac7fa907a30c36e26f816d6e42464f48584db4be1b5729d4bce51
+strawberry-msvc-x86-release.tar.xz     = 9dde3eea8be698a1952c9134819befa47d71a08921a2f112b260a1fc2cea0f0d
+strawberry-msvc-x86-debug.tar.xz       = 6f249fcfb6e19d8e83cee0e16da2d52b1bd55e462dd3c2a760bacf4e358819cb
+strawberry-msvc-x86_64-release.tar.xz  = 0a03efd5e9c627dbb018d1612f7c2fc5ca77ee53e7f9ea80928466ed1e86c909
+strawberry-msvc-x86_64-debug.tar.xz    = feca34253705dd1ad150cde74b31a437b909ec303086c7f0c02970bf772b1fec
 '@
 
     $SIGNED_FILES = @'
@@ -330,6 +339,7 @@ https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependen
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/fftw-fixes.patch
 # https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/getopt-win-cmake.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/gst-plugins-bad-meson-dependency.patch
+https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/gst-plugins-bad-wasapi2.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libbs2b-msvc.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libbs2b-clipping.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libgme-pkgconf.patch

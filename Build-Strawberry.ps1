@@ -2544,6 +2544,7 @@ Cflags: -I`${includedir}
         }
         Write-Host -fo Cyan '    Patch build configuration...'
         Get-Content "$DownloadPath\gst-plugins-bad-meson-dependency.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
+        Get-Content "$DownloadPath\gst-plugins-bad-wasapi2.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         if ($Error.Count -gt 0 -or $LASTEXITCODE -gt 1) { return }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'

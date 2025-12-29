@@ -47,7 +47,7 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 - Git for Windows 2.52.0
 - Qt 6 build tools for VS2022
 - CMake 4.2.1
-- Meson Build 1.8.2
+- Meson Build 1.10.0
 - NASM 3.01
 - Strawberry Perl 5.42.0
 - Python 3.14.0b1
