@@ -280,7 +280,7 @@ bzip2-cmake.patch                      = c6089dcebc75789dd84c2edd6b36fe9cb40fbfc
 faac-msvc.patch                        = 96f53f6411ac621768669d7eb3cd8d94767be4eba4d1b6f209f20f6fb919e9a5
 fftw-fixes.patch                       = 4ebdcd7ce363759cc108ec3674da6ae39f7e542f0b14e5f4f329edb8a6877810
 gst-plugins-bad-meson-dependency.patch = dcb4641d6e214a6844572332219f56d977e27e17a750058d5e3f0929d4e7d496
-gst-plugins-bad-wasapi2.patch          = a43d1c266334adbfeebe769c83e1b28525f626cbab178ff42c2f5ae0c0bb26e4
+gst-plugins-bad-wasapi2.patch          = 6d305a947e0e536435b5b0bb13042a5c5f2f34abae3e8ce5e03723dcd506be9b
 libbs2b-clipping.patch                 = 6e059e81766449469de2e58f9d46fb1a01e2a7917af24e4bb25167b13bc73f93
 libbs2b-msvc.patch                     = 9feb9cc77217d4e9db3690fa3baeec33c4032d5a62a313967f8913d046daca93
 libgme-pkgconf.patch                   = 4b5617e0cf302f5ee3b6df88fceba38b2be9a7a42f256c117522dc9f5f896363
@@ -293,10 +293,10 @@ sparsehash-msvc.patch                  = 138f6567120e233329f26a1ee2485b574603956
 speex-cmake.patch                      = 87e17e7f57660bf884bdf106bbf32972a96bbf4131b2014483f9e14779af9fa1
 twolame.patch                          = ad0bf19387e842ce6070a7a812a80237b16591441f6b822909722d3870a01c88
 yasm-cmake.patch                       = a0c6f4becb5314dbfcf3f845e143bbaf80c216a76612f5e6cb968d3ee1a795b8
-strawberry-msvc-x86-release.tar.xz     = 9dde3eea8be698a1952c9134819befa47d71a08921a2f112b260a1fc2cea0f0d
-strawberry-msvc-x86-debug.tar.xz       = 6f249fcfb6e19d8e83cee0e16da2d52b1bd55e462dd3c2a760bacf4e358819cb
-strawberry-msvc-x86_64-release.tar.xz  = 0a03efd5e9c627dbb018d1612f7c2fc5ca77ee53e7f9ea80928466ed1e86c909
-strawberry-msvc-x86_64-debug.tar.xz    = feca34253705dd1ad150cde74b31a437b909ec303086c7f0c02970bf772b1fec
+strawberry-msvc-x86-release.tar.xz     = c48cfdb9d5e445e12d5f56db37c178b35fae4a6eee42119cedfde72c3e01c9a0
+strawberry-msvc-x86-debug.tar.xz       = fa0fe02353f05fa57fcef736d3ec0de829a02403c30ec33077f4562796f9b6f1
+strawberry-msvc-x86_64-release.tar.xz  = f22f7dc809e03cb84036ef72d9affc7936cf1aae0dd29f975bd48e6c22edc517
+strawberry-msvc-x86_64-debug.tar.xz    = a0481a19c9cbecc1a25b6da0bb98ad72dfe532cb242e98a0400ddda9db83ccb2
 '@
 
     $SIGNED_FILES = @'

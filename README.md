@@ -66,8 +66,7 @@ The build scripts are derived from the [download.bat](https://github.com/strawbe
 
 These scripts apply the same patches to the Strawberry dependencies as found in the [strawberry-msvc-dependencies](https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/) repo, plus a few tweaks here and there to make sure they compile in my build environment.
 
-No changes are made to the [Strawberry source code](https://github.com/strawberrymusicplayer/strawberry) with the exception of adding a static cast to `gsize` in the [gstfastspectrum.cpp](https://github.com/strawberrymusicplayer/strawberry/blame/d901258f11431a2acade70b25dee365a0f4024d5/src/engine/gstfastspectrum.cpp#L472) file to permit strict building (`BUILD_WERROR=ON`) on x86 builds.
-You can view the patch in the [build script](https://github.com/TheFreeman193/StrawberryWindows/blob/main/Build-Strawberry.ps1?plain=1) by searching for 'gstfastspectrum.cpp'.
+No changes are made to the [Strawberry source code](https://github.com/strawberrymusicplayer/strawberry).
 
 Each dependency and Strawberry itself are compiled in a separate function in the build script, with the build strategy defined near the end (search for '#region Build Strategy').
 
@@ -81,7 +80,7 @@ The [version file](https://github.com/TheFreeman193/StrawberryWindows/blob/main/
 ### Get-Dependencies.ps1
 
 This script is derived from the [download.bat](https://github.com/strawberrymusicplayer/strawberry-msvc/blob/master/download.bat) script and retrieves the dependency versions as specified in a version file (see Get-Versions.ps1).
-In addition, it can perform cleanup of old/non-dependency files in the target directory and verifies the integrity of downloaded dependency archives (where hashes are present for that version).
+In addition, it can perform cleanup of old/non-dependency files in the target directory and verifies the integrity of downloaded dependency archives (where hashes or digital signatures are present for that version).
 It supports syncing specific commits or branch heads of the Git-based dependencies for version-pinning.
 
 ### Build-Strawberry.ps1

@@ -3353,13 +3353,6 @@ Cflags: -I`${includedir}
             $null = New-Item "$LocalBuildPath\build" -ItemType Directory -Force
             if (-not $?) { return }
         }
-        if ($BuildArch -eq 'x86') {
-            Write-Host -fo Cyan '    Patch build configuration guint64 -> gsize...'
-            (Get-Content "$LocalBuildPath\src\engine\gstfastspectrum.cpp" -Raw) -replace
-            'size -= block_size \* bpf;', 'size -= static_cast<gsize>(block_size * bpf);' |
-                Set-Content "$LocalBuildPath\src\engine\gstfastspectrum.cpp" -NoNewline
-            if (-not $?) { return }
-        }
         $IncludeSpotify = if (Test-Path "$DependsPath\lib\gstreamer-*\gstspotify.dll") { 'ON' } else { 'OFF' }
         $EnableCon = if ($EnableStrawberryConsole) { 'ON' } else { 'OFF' }
         Write-Host -fo Cyan '    CMake configure...'
@@ -3382,7 +3375,6 @@ Cflags: -I`${includedir}
         cmake.exe --build "$LocalBuildPath\build" --config $BuildTypeCMake --verbose | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
-        # cmake.exe --install "$LocalBuildPath\build" | Out-Default
         cmake.exe --install "$LocalBuildPath\build" --prefix "$LocalBuildPath\build" --config $BuildTypeCMake --verbose | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Move-Item "$LocalBuildPath\build\bin\*" "$LocalBuildPath\build\" -Force
