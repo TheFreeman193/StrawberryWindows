@@ -34,7 +34,7 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
   - 8c Intel 9th Gen @ 4.8 GHz, 8-64 GB dynamically allocated RAM @ 3600 MT/s
   - 64 GB boot disk, 32 GB RAM disk for staging/build targets
 - PowerShell 7.5.4
-- Visual Studio 2022 Community 17.14.23
+- Visual Studio 2022 Community 17.14.24
   - C++ core module
   - MSVC v143
   - C++ ATL for MSVC v143

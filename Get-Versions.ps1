@@ -4,10 +4,10 @@ using namespace System.Collections.Specialized
 [CmdletBinding()]
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [string]$MsvcCommit = '0eac47219d13176e4567ba96d76abcad0ec57661', # https://github.com/strawberrymusicplayer/strawberry-msvc/commits/master/
-    [string]$MsvcDepsCommit = '56c233d282816f9a968fab1b6fe4163af2828efe', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
-    [string]$MsvcDepsRelease = '20604887122', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
-    [string]$StrawberryCommit = 'd2b5359fa9ce5fb121ce84460841eb6e9b927fee' # https://github.com/strawberrymusicplayer/strawberry/commits/master/
+    [string]$MsvcCommit = '70ea2b3813d7ad0f73c0aac646527bf3782cd890', # https://github.com/strawberrymusicplayer/strawberry-msvc/commits/master/
+    [string]$MsvcDepsCommit = 'a31b4056c412f7c540c0db1071ad366726da7ae4', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
+    [string]$MsvcDepsRelease = '20884660380', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
+    [string]$StrawberryCommit = 'a71e5b170bd49584e2a3fe99aef32012575c5882' # https://github.com/strawberrymusicplayer/strawberry/commits/master/
 )
 process {
     $VersionTemp = New-TemporaryFile

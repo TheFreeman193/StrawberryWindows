@@ -20,7 +20,7 @@ begin {
     #region Version Data
 
     # Additional version data
-    $SQLITE_YEAR = '2025'
+    $SQLITE_YEAR = '2026'
     $ICONV_DEFAULT_VERSION = '1.17'
     $NSISLOCKEDLIST_VERSION = '3.1.0.0'
     $NSISLOCKEDLISTOLD_VERSION = 'd/d3'
@@ -293,10 +293,10 @@ sparsehash-msvc.patch                  = 138f6567120e233329f26a1ee2485b574603956
 speex-cmake.patch                      = 87e17e7f57660bf884bdf106bbf32972a96bbf4131b2014483f9e14779af9fa1
 twolame.patch                          = ad0bf19387e842ce6070a7a812a80237b16591441f6b822909722d3870a01c88
 yasm-cmake.patch                       = a0c6f4becb5314dbfcf3f845e143bbaf80c216a76612f5e6cb968d3ee1a795b8
-strawberry-msvc-x86-release.tar.xz     = c48cfdb9d5e445e12d5f56db37c178b35fae4a6eee42119cedfde72c3e01c9a0
-strawberry-msvc-x86-debug.tar.xz       = fa0fe02353f05fa57fcef736d3ec0de829a02403c30ec33077f4562796f9b6f1
-strawberry-msvc-x86_64-release.tar.xz  = f22f7dc809e03cb84036ef72d9affc7936cf1aae0dd29f975bd48e6c22edc517
-strawberry-msvc-x86_64-debug.tar.xz    = a0481a19c9cbecc1a25b6da0bb98ad72dfe532cb242e98a0400ddda9db83ccb2
+strawberry-msvc-x86-release.tar.xz     = 5e47cba6896f75ca70a56139237f247a594d62b0592e788723212f58b29cd250
+strawberry-msvc-x86-debug.tar.xz       = 2888896a9d5792e61bf4c8a3b5521bf708e2d69d692e58be79a4a7844d4812de
+strawberry-msvc-x86_64-release.tar.xz  = 5a17271a26dd86240d4ec2fced8c1d05127759c2186c001ee49810838480cf90
+strawberry-msvc-x86_64-debug.tar.xz    = 0e2d2987396939a58c2be82f900118630549b83e654ce327efdbc7e556591083
 '@
 
     $SIGNED_FILES = @'
