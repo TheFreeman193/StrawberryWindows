@@ -1,3 +1,6 @@
+# Copyright 2026 Nicholas Bissell (TheFreeman193)
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 param(
     [string]$TargetDir = "$env:ProgramFiles\Strawberry Music Player Debug",
     [ValidateSet('x64', 'x86', 'arm64', 'arm')]

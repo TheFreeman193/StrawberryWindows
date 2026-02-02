@@ -1,4 +1,5 @@
-#requires -Version 5.0
+# Copyright 2026 Nicholas Bissell (TheFreeman193)
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 using namespace System.Management.Automation
 using namespace System.IO
@@ -446,7 +447,7 @@ process {
             --openssldir="$DependsPath\ssl" `
             --$BuildType `
             --with-zlib-include="$DependsPath\include" `
-            --with-zlib-lib="$DependsPath\lib\zlib.lib" | Out-Default
+            --with-zlib-lib="$DependsPath\lib\zlib$DebugPostfix.lib" | Out-Default
         if ($LASTEXITCODE -ne 0) { Pop-Location; return }
         Write-Host -fo Cyan '    NMake build...'
         nmake.exe /f "$LocalBuildPath\makefile" MAKEDIR="$LocalBuildPath" | Out-Default
@@ -728,10 +729,10 @@ Cflags: -I`${includedir}
     }
 
     function BuildLibjpeg {
-        $LocalBuildPath = "$BuildPath\libjpeg-turbo-$LIBJPEG_TURBO_VERSION"
+        $LocalBuildPath = "$BuildPath\libjpeg-turbo-$LIBJPEG_VERSION"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
-            tar.exe -xf "$DownloadPath\libjpeg-turbo-$LIBJPEG_TURBO_VERSION.tar.gz" -C $BuildPath | Out-Default
+            tar.exe -xf "$DownloadPath\libjpeg-turbo-$LIBJPEG_VERSION.tar.gz" -C $BuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
         if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
@@ -1094,7 +1095,7 @@ Requires: icu-i18n
             -DLIBXML2_WITH_PYTHON=OFF `
             -DLIBXML2_WITH_ZLIB=ON `
             -DLIBXML2_WITH_LZMA=ON `
-            -DLIBXML2_WITH_ICONV=ON `
+            -DLIBXML2_WITH_ICONV=OFF `
             -DLIBXML2_WITH_ICU=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -1161,11 +1162,11 @@ Requires: icu-i18n
     }
 
     function BuildLibintl {
-        $LocalBuildPath = "$BuildPath\proxy-libintl"
+        $LocalBuildPath = "$BuildPath\proxy-libintl-${PROXY_LIBINTL_VERSION}"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Copy source repo...'
-            Copy-Item "$DownloadPath\proxy-libintl" $LocalBuildPath -Recurse -Force
-            if (-not $?) { return }
+            Write-Host -fo Cyan '    Extract source...'
+            tar.exe -xf "$DownloadPath\proxy-libintl-${PROXY_LIBINTL_VERSION}.tar.gz" -C $BuildPath | Out-Default
+            if ($LASTEXITCODE -ne 0) { return }
         }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
@@ -1285,10 +1286,10 @@ Requires: icu-i18n
     }
 
     function BuildSqlite {
-        $LocalBuildPath = "$BuildPath\sqlite-autoconf-$SQLITE3_VERSION"
+        $LocalBuildPath = "$BuildPath\sqlite-autoconf-$SQLITE_VERSION"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
-            tar.exe -xf "$DownloadPath\sqlite-autoconf-$SQLITE3_VERSION.tar.gz" -C $BuildPath | Out-Default
+            tar.exe -xf "$DownloadPath\sqlite-autoconf-$SQLITE_VERSION.tar.gz" -C $BuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
         Write-Host -fo Cyan '    CL build...'
@@ -2161,7 +2162,9 @@ Cflags: -I`${includedir}
         Copy-Item "$LocalBuildPath\include\*.h" "$DependsPath\include\" -Force
         if (-not $?) { return }
         Write-Host -fo Cyan '    Copy libraries...'
-        Copy-Item "$LocalBuildPath\project\msvc\bin\$BuildType\libfaac_dll.lib" "$DependsPath\lib\libfaac.lib" -Force
+        Copy-Item "$LocalBuildPath\project\msvc\bin\$BuildType\libfaac_dll.lib" "$DependsPath\lib\" -Force
+        if (-not $?) { return }
+        Copy-Item "$LocalBuildPath\project\msvc\bin\$BuildType\libfaac_dll.lib" "$DependsPath\lib\faac.lib" -Force
         if (-not $?) { return }
         Write-Host -fo Cyan '    Copy binaries...'
         Copy-Item "$LocalBuildPath\project\msvc\bin\$BuildType\*.dll" "$DependsPath\bin\" -Force
@@ -2312,6 +2315,7 @@ Cflags: -I`${includedir}
                 --wrap-mode=nodownload `
                 -Dtests=disabled `
                 -Dgpl=enabled `
+                -Diconv=disabled `
                 "$LocalBuildPath\build" $LocalBuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
@@ -2542,15 +2546,14 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
-        Write-Host -fo Cyan '    Patch build configuration...'
-        Get-Content "$DownloadPath\gst-plugins-bad-meson-dependency.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
-        Get-Content "$DownloadPath\gst-plugins-bad-wasapi2.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
-        if ($Error.Count -gt 0 -or $LASTEXITCODE -gt 1) { return }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
-            meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared --prefix="$DependsPath" --pkg-config-path="$DependsPath\lib\pkgconfig" `
+            meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared --prefix="$DependsPathForward" --pkg-config-path="$DependsPath\lib\pkgconfig" `
                 --wrap-mode=nodownload `
-                -Dc_args="-I$DependsPathForward/include -I$DependsPathForward/include/opus" `
+                -Dc_args="-I$DependsPathForward/include" `
+                -Dcpp_args="-I$DependsPathForward/include" `
+                -Dc_link_args="-L$DependsPath\lib" `
+                -Dcpp_link_args="-L$DependsPath\lib" `
                 --auto-features=disabled `
                 -Dexamples=disabled `
                 -Dtools=enabled `
@@ -2686,7 +2689,7 @@ Cflags: -I`${includedir}
             if ($LASTEXITCODE -ne 0) { return }
             git.exe -C "$LocalBuildPath" pull --rebase --autostash
         } else {
-            git.exe -C "$LocalBuildPath" checkout $GSTREAMER_PLUGINS_RS_VERSION
+            git.exe -C "$LocalBuildPath" checkout $GSTREAMER_GST_PLUGINS_RS_VERSION
         }
         if ($LASTEXITCODE -ne 0) { return }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
@@ -2730,6 +2733,10 @@ Cflags: -I`${includedir}
             -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_TESTING=OFF `
+            -DCMAKE_CXX_STANDARD=17 `
+            -DCMAKE_CXX_STANDARD_REQUIRED=ON `
+            -DABSL_INTERNAL_AT_LEAST_CXX17=ON `
+            -DABSL_USE_EXTERNAL_GOOGLETEST=OFF `
             -DABSL_BUILD_TESTING=OFF | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -2888,6 +2895,46 @@ Cflags: -I`${includedir}
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
     }
 
+    function BuildQtimageformats {
+        if ($QTDevMode) {
+            $LocalBuildPath = "$BuildPath\qtimageformats"
+            if (-not (Test-Path $LocalBuildPath -PathType Container)) {
+                Write-Host -fo Cyan '    Copy source repo...'
+                Copy-Item "$DownloadPath\qtimageformats" $LocalBuildPath -Recurse -Force
+                if (-not $?) { return }
+                git.exe -C "$LocalBuildPath" pull --rebase --autostash
+            }
+        } else {
+            $LocalBuildPath = "$BuildPath\qtimageformats-everywhere-src-$QT_VERSION"
+            if (-not (Test-Path $LocalBuildPath -PathType Container)) {
+                Write-Host -fo Cyan '    Extract source...'
+                7z.exe x -aos "$DownloadPath\qtimageformats-everywhere-src-$QT_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
+                if ($LASTEXITCODE -ne 0) { return }
+                7z.exe x -aoa "$DownloadPath\qtimageformats-everywhere-src-$QT_VERSION.tar" -o"$BuildPath" | Out-Default
+                if ($LASTEXITCODE -ne 0) { return }
+            }
+        }
+        Write-Host -fo Cyan '    CMake configure...'
+        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
+            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
+            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
+            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
+            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+            -DCMAKE_PREFIX_PATH="$DependsPathForward/lib/cmake" `
+            -DBUILD_SHARED_LIBS=ON `
+            -DBUILD_STATIC_LIBS=OFF `
+            -DFEATURE_jasper=ON `
+            -DFEATURE_tiff=ON `
+            -DFEATURE_webp=ON `
+            -DFEATURE_system_tiff=ON `
+            -DFEATURE_system_webp=ON | Out-Default
+        Write-Host -fo Cyan '    CMake build...'
+        cmake.exe --build "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake install...'
+        cmake.exe --install "$LocalBuildPath\build" | Out-Default
+    }
+
     function BuildQtgrpc {
         if ($QTDevMode) {
             $LocalBuildPath = "$BuildPath\qtgrpc"
@@ -2917,6 +2964,7 @@ Cflags: -I`${includedir}
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DQT_BUILD_EXAMPLES=OFF `
+            -DQT_BUILD_TESTS=OFF `
             -DQT_BUILD_EXAMPLES_BY_DEFAULT=OFF `
             -DQT_BUILD_TOOLS_WHEN_CROSSCOMPILING=ON | Out-Default
         Write-Host -fo Cyan '    CMake build...'
@@ -3165,10 +3213,10 @@ Cflags: -I`${includedir}
     }
 
     function BuildPeParse {
-        $LocalBuildPath = "$BuildPath\pe-parse-${PE_PARSE_VERSION}"
+        $LocalBuildPath = "$BuildPath\pe-parse-${PEPARSE_VERSION}"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
-            tar.exe -xf "$DownloadPath\pe-parse-${PE_PARSE_VERSION}.tar.gz" -C $BuildPath | Out-Default
+            tar.exe -xf "$DownloadPath\pe-parse-${PEPARSE_VERSION}.tar.gz" -C $BuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
         if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
@@ -3214,6 +3262,110 @@ Cflags: -I`${includedir}
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DBUILD_COMMAND_LINE_TOOLS=OFF | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake build...'
+        cmake.exe --build "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake install...'
+        cmake.exe --install "$LocalBuildPath\build" | Out-Default
+    }
+
+    function BuildJasper {
+        $LocalBuildPath = "$BuildPath\jasper-$JASPER_VERSION-build"
+        $LocalSourcePath = "$BuildPath\jasper-$JASPER_VERSION"
+        if (-not (Test-Path $LocalSourcePath -PathType Container)) {
+            Write-Host -fo Cyan '    Extract archive...'
+            tar.exe -xf "$DownloadPath\jasper-$JASPER_VERSION.tar.gz" -C $BuildPath | Out-Default
+            if ($LASTEXITCODE -ne 0) { return }
+        }
+        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
+            Write-Host -fo Cyan '    Create build directory...'
+            $null = New-Item $LocalBuildPath -ItemType Directory -Force
+            if (-not $?) { return }
+        }
+        Write-Host -fo Cyan '    Patch build configuration...'
+        (Get-Content "$LocalSourcePath\CMakeLists.txt" -ErrorAction Stop).Where{ $_ -inotmatch '^\s*include\(InstallRequiredSystemLibraries\)\s*$' } | Set-Content "$LocalSourcePath\CMakeLists.txt"
+        if (-not $?) { return }
+        Write-Host -fo Cyan '    CMake configure...'
+        cmake.exe --log-level="DEBUG" -S $LocalSourcePath -B $LocalBuildPath -G $CMakeGenerator `
+            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
+            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
+            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
+            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+            -DBUILD_SHARED_LIBS=ON `
+            -DBUILD_STATIC_LIBS=OFF `
+            -DJAS_ENABLE_JP2_CODEC=ON `
+            -DJAS_ENABLE_JPC_CODEC=ON `
+            -DJAS_ENABLE_JPG_CODEC=ON `
+            -DJAS_ENABLE_LIBJPEG=ON `
+            -DJAS_ENABLE_OPENGL=ON `
+            -DJAS_INCLUDE_BMP_CODEC=ON `
+            -DJAS_INCLUDE_JP2_CODEC=ON `
+            -DJAS_INCLUDE_JPC_CODEC=ON `
+            -DJAS_INCLUDE_JPG_CODEC=ON | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake build...'
+        cmake.exe --build $LocalBuildPath | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake install...'
+        cmake.exe --install $LocalBuildPath | Out-Default
+    }
+
+    function BuildTiff {
+        $LocalBuildPath = "$BuildPath\tiff-$TIFF_VERSION"
+        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
+            Write-Host -fo Cyan '    Extract archive...'
+            tar.exe -xf "$DownloadPath\tiff-${TIFF_VERSION}.tar.gz" -C $BuildPath | Out-Default
+            if ($LASTEXITCODE -ne 0) { return }
+        }
+        if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
+            Write-Host -fo Cyan '    Create build directory...'
+            $null = New-Item "$LocalBuildPath\build" -ItemType Directory -Force
+            if (-not $?) { return }
+        }
+        Write-Host -fo Cyan '    CMake configure...'
+        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
+            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
+            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
+            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
+            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+            -DBUILD_SHARED_LIBS=ON `
+            -DBUILD_STATIC_LIBS=OFF `
+            -Djpeg=ON `
+            -Dtiff-static=OFF `
+            -Dtiff-docs=OFF `
+            -Dtiff-tests=OFF | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake build...'
+        cmake.exe --build "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake install...'
+        cmake.exe --install "$LocalBuildPath\build" | Out-Default
+    }
+
+    function BuildLibWebp {
+        $LocalBuildPath = "$BuildPath\libwebp-$LIBWEBP_VERSION"
+        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
+            Write-Host -fo Cyan '    Extract archive...'
+            tar.exe -xf "$DownloadPath\libwebp-$LIBWEBP_VERSION.tar.gz" -C $BuildPath | Out-Default
+            if ($LASTEXITCODE -ne 0) { return }
+        }
+        if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
+            Write-Host -fo Cyan '    Create build directory...'
+            $null = New-Item "$LocalBuildPath\build" -ItemType Directory -Force
+            if (-not $?) { return }
+        }
+        Write-Host -fo Cyan '    CMake configure...'
+        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
+            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
+            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
+            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
+            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+            -DBUILD_SHARED_LIBS=ON `
+            -DBUILD_STATIC_LIBS=OFF `
+            -DWEBP_LINK_STATIC=OFF `
+            -DWEBP_UNICODE=ON `
+            -DWEBP_USE_THREAD=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
         cmake.exe --build "$LocalBuildPath\build" | Out-Default
@@ -3487,8 +3639,9 @@ Cflags: -I`${includedir}
         $QTBaseVer = $QTToolsVer = <# $QTGrpcVer =  #>$QT_VERSION
     }
     $BUILD_TARGETS = [ordered]@{
-        "Yasm $YASM_VERSION"                            = 'BuildYasm', '*', "$DependsPath\bin\yasm.exe"
         "pkgconf $PKGCONF_VERSION"                      = 'BuildPkgConf', '*', "$DependsPath\bin\pkgconf.exe"
+        "Yasm $YASM_VERSION"                            = 'BuildYasm', '*', "$DependsPath\bin\yasm.exe"
+        "Libintl $PROXY_LIBINTL_VERSION"                = 'BuildLibintl', '*', "$DependsPath\lib\intl.lib"
         # "mimalloc $MIMALLOC_VERSION"                    = 'BuildMimAlloc', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\mimalloc.pc"
         "getopt-win ($(GetRepoCommit getopt-win))"      = 'BuildGetOpt', '*', "$DependsPath\lib\getopt.lib"
         "zlib $ZLIB_VERSION"                            = 'BuildZlib', '*', "$DependsPath\lib\z.lib"
@@ -3497,12 +3650,12 @@ Cflags: -I`${includedir}
         "Nettle $NETTLE_VERSION"                        = 'BuildNettle', '*', "$DependsPath\lib\pkgconfig\nettle.pc"
         "GnuTLS $GNUTLS_VERSION"                        = 'BuildGnutls', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\gnutls.pc"
         "libpng $LIBPNG_VERSION"                        = 'BuildLibpng', '*', "$DependsPath\lib\pkgconfig\libpng.pc"
-        "libjpeg $LIBJPEG_TURBO_VERSION"                = 'BuildLibjpeg', '*', "$DependsPath\lib\pkgconfig\libjpeg.pc"
+        "libjpeg $LIBJPEG_VERSION"                      = 'BuildLibjpeg', '*', "$DependsPath\lib\pkgconfig\libjpeg.pc"
         "PCRE2 $PCRE2_VERSION"                          = 'BuildPcre2', '*', "$DependsPath\lib\pkgconfig\libpcre2-16.pc"
         "bzip2 $BZIP2_VERSION"                          = 'BuildBzip2', '*', "$DependsPath\lib\pkgconfig\bzip2.pc"
         "xz $XZ_VERSION"                                = 'BuildXz', '*', "$DependsPath\lib\pkgconfig\liblzma.pc"
         "Brotli $BROTLI_VERSION"                        = 'BuildBrotli', '*', "$DependsPath\lib\pkgconfig\libbrotlicommon.pc"
-        "Iconv ($(GetRepoCommit libiconv-for-Windows))" = 'BuildLibiconv', '*', "$DependsPath\lib\libiconv*.lib"
+        # "Iconv ($(GetRepoCommit libiconv-for-Windows))" = 'BuildLibiconv', '*', "$DependsPath\lib\libiconv*.lib"
         "Icu4c $ICU4C_VERSION"                          = 'BuildIcu4c', '*', "$DependsPath\lib\pkgconfig\icu-uc.pc"
         "Pixman $PIXMAN_VERSION"                        = 'BuildPixman', '*', "$DependsPath\lib\pkgconfig\pixman-1.pc"
         "Expat $EXPAT_VERSION"                          = 'BuildExpat', '*', "$DependsPath\lib\pkgconfig\expat.pc"
@@ -3510,12 +3663,11 @@ Cflags: -I`${includedir}
         "Libxml2 $LIBXML2_VERSION"                      = 'BuildLibxml2', '*', "$DependsPath\lib\pkgconfig\libxml-2.0.pc"
         "Nghttp2 $NGHTTP2_VERSION"                      = 'BuildNghttp2', '*', "$DependsPath\lib\pkgconfig\libnghttp2.pc"
         "Libffi ($(GetRepoCommit libffi))"              = 'BuildLibffi', '*', "$DependsPath\lib\pkgconfig\libffi.pc"
-        # "Libintl ($(GetRepoCommit proxy-libintl))"      = 'BuildLibintl', '*', "$DependsPath\lib\intl.lib"
         "Dlfcn $DLFCN_VERSION"                          = 'BuildDlfcn', '*', "$DependsPath\include\dlfcn.h"
         "Libpsl $LIBPSL_VERSION"                        = 'BuildLibpsl', '*', "$DependsPath\lib\pkgconfig\libpsl.pc"
         "Orc $ORC_VERSION"                              = 'BuildOrc', '*', "$DependsPath\lib\pkgconfig\orc-0.4.pc"
         # "Libcurl $CURL_VERSION"                         = 'BuildLibcurl', '*', "$DependsPath\lib\pkgconfig\libcurl.pc"
-        "Sqlite $SQLITE3_VERSION"                       = 'BuildSqlite', '*', "$DependsPath\lib\pkgconfig\sqlite3.pc"
+        "Sqlite $SQLITE_VERSION"                        = 'BuildSqlite', '*', "$DependsPath\lib\pkgconfig\sqlite3.pc"
         "Glib $GLIB_VERSION"                            = 'BuildGlib', '*', "$DependsPath\lib\pkgconfig\glib-2.0.pc"
         # "Libproxy $LIBPROXY_VERSION"                    = 'BuildLibproxy', '*', "$DependsPath\lib\libproxy.lib" # Doesn't compile with MSVC
         "Libsoup $LIBSOUP_VERSION"                      = 'BuildLibsoup', '*', "$DependsPath\lib\pkgconfig\libsoup-3.0.pc"
@@ -3523,6 +3675,9 @@ Cflags: -I`${includedir}
         "Freetype $FREETYPE_VERSION"                    = 'BuildFreetype', '*', "$DependsPath\lib\freetype.lib"
         # "Cairo $CAIRO_VERSION"                          = 'BuildCairo', '*', "$DependsPath\lib\pkgconfig\cairo.pc"
         "Harfbuzz $HARFBUZZ_VERSION"                    = 'BuildHarfbuzz', '*', "$DependsPath\lib\harfbuzz*.lib"
+        "Jasper $JASPER_VERSION"                        = 'BuildJasper', '*', "$DependsPath\lib\pkgconfig\jasper.pc"
+        "Tiff $TIFF_VERSION"                            = 'BuildTiff', '*', "$DependsPath\lib\pkgconfig\libtiff-4.pc"
+        "Libwebp $LIBWEBP_VERSION"                      = 'BuildLibWebp', '*', "$DependsPath\lib\pkgconfig\libwebp.pc"
         "Libogg $LIBOGG_VERSION"                        = 'BuildLibogg', '*', "$DependsPath\lib\pkgconfig\ogg.pc"
         "Libvorbis $LIBVORBIS_VERSION"                  = 'BuildLibvorbis', '*', "$DependsPath\lib\pkgconfig\vorbis.pc"
         "Flac $FLAC_VERSION"                            = 'BuildFlac', '*', "$DependsPath\lib\pkgconfig\flac.pc"
@@ -3552,21 +3707,22 @@ Cflags: -I`${includedir}
         "Gstpluginsbad $GSTREAMER_VERSION"              = 'BuildGstpluginsbad', '*', "$DependsPath\lib\pkgconfig\gstreamer-plugins-bad-1.0.pc"
         "Gstpluginsugly $GSTREAMER_VERSION"             = 'BuildGstpluginsugly', '*', "$DependsPath\lib\gstreamer-1.0\gstasf.lib"
         "Gstlibav $GSTREAMER_VERSION"                   = 'BuildGstlibav', '*', "$DependsPath\lib\gstreamer-1.0\gstlibav.lib"
-        "Gstspotify $GSTREAMER_PLUGINS_RS_VERSION"      = 'BuildGstspotify', 'x64', "$DependsPath\lib\gstreamer-1.0\gstspotify.dll"
-        # "Abseil $ABSEIL_VERSION"                        = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc"
-        # "Protobuf $PROTOBUF_VERSION"                    = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"
+        "Gstspotify $GSTREAMER_GST_PLUGINS_RS_VERSION"  = 'BuildGstspotify', 'x64', "$DependsPath\lib\gstreamer-1.0\gstspotify.dll"
+        "Abseil $ABSEIL_VERSION"                        = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc" # TODO CHECK NEEDED
+        "Protobuf $PROTOBUF_VERSION"                    = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"  # TODO CHECK NEEDED
         "Qtbase $QTBaseVer"                             = 'BuildQtbase', '*', "$DependsPath\bin\qt-configure-module.bat"
         "Qttools $QTToolsVer"                           = 'BuildQttools', '*', "$DependsPath\lib\cmake\Qt6Linguist\Qt6LinguistConfig.cmake"
-        # "Qtgrpc $QTGrpcVer"                             = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"
+        "Qtimageformats $QTToolsVer"                    = 'BuildQtimageformats', '*', "$DependsPath\plugins\imageformats\qwebp$DebugPostfix.dll"
+        "Qtgrpc $QTGrpcVer"                             = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"  # TODO CHECK NEEDED
+        "KDsingleapp $KDSINGLEAPPLICATION_VERSION"      = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
+        "Qtsparkle ($(GetRepoCommit qtsparkle))"        = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
         "Sparsehash $SPARSEHASH_VERSION"                = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
         "Rapidjson ($(GetRepoCommit rapidjson))"        = 'BuildRapidjson', '*', "$DependsPath\lib\cmake\RapidJSON\RapidJSONConfig.cmake"
-        "Qtsparkle ($(GetRepoCommit qtsparkle))"        = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
-        "KDsingleapp $KDSINGLEAPPLICATION_VERSION"      = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
-        # "Glew $GLEW_VERSION"                            = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
-        # "Libprojectm $LIBPROJECTM_VERSION"              = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
-        "Gettext $GETTEXT_VERSION"                      = 'BuildGettext', '*', "$DependsPath\bin\gettext.exe"
+        "Glew $GLEW_VERSION"                            = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
+        "Libprojectm $LIBPROJECTM_VERSION"              = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
+        # "Gettext $GETTEXT_VERSION"                      = 'BuildGettext', '*', "$DependsPath\bin\gettext.exe"
         "Tinysvcmdns ($(GetRepoCommit tinysvcmdns))"    = 'BuildTinysvcmdns', '*', "$DependsPath\lib\pkgconfig\tinysvcmdns.pc"
-        "Pe-parse $PE_PARSE_VERSION"                    = 'BuildPeParse', '*', "$DependsPath\lib\pe-parse.lib"
+        "Pe-parse $PEPARSE_VERSION"                     = 'BuildPeParse', '*', "$DependsPath\lib\pe-parse.lib"
         "Pe-util ($(GetRepoCommit pe-util))"            = 'BuildPeUtil', '*', "$DependsPath\bin\peldd.exe"
     }
 
@@ -3661,11 +3817,8 @@ Cflags: -I`${includedir}
                     }
                 }
         }
-        # Write-Host -fo Yellow "Dependencies extracted and retargeted to $DependsPath. Please run the script again to recalculate build steps."
-        # $OverallSuccess = $true
-        # return
     }
-    if ($DependsPath -ne "C:\$DefaultName" -and -not (Test-Path "C:\$DefaultName")) {
+    if (-not $FromScratch -and $DependsPath -ne "C:\$DefaultName" -and -not (Test-Path "C:\$DefaultName")) {
         $null = New-Item -ItemType Junction -Path "C:\$DefaultName" -Value $DependsPath
         if (-not $?) { return }
         Write-Host -fo Cyan "    Created directory junction C:\$DefaultName -> $DependsPath"
