@@ -40,7 +40,7 @@ begin {
     $GSTSPOTIFY_BRANCH = 'main'
     $GETOPT_BRANCH = 'getopt_glibc_2.42_port'
     $TINYSVCMDNS_BRANCH = 'master'
-    $RAPIDJSON_BRANCH = 'master'
+    # $RAPIDJSON_BRANCH = 'master'
     $GMP_BRANCH = 'master'
     $NETTLE_BRANCH = 'master'
     $GNUTLS_BRANCH = 'master'
@@ -144,7 +144,6 @@ qtbase-everywhere-src-6.10.2.tar.xz    = aeb78d29291a2b5fd53cb55950f8f5065b4978c
 qtgrpc-everywhere-src-6.10.2.tar.xz    = 7386bfc9c10c7920e5ff22dcf067e95f379bb379e4d916269f4465ab295ed136
 qtimageformats-everywhere-src-6.10.2.tar.xz = 8b8f9c718638081e7b3c000e7f31910140b1202a98e98df5d1b496fe6f639d67
 qttools-everywhere-src-6.10.2.tar.xz   = 1e3d2c07c1fd76d2425c6eaeeaa62ffaff5f79210c4e1a5bc2a6a9db668d5b24
-rapidjson-1.1.0.tar.gz                 = bf7ced29704a1e696fbccf2a2b4ea068e7774fa37f6d7dd4039d0787f8bed98e
 Registry.zip                           = 791451f1be34ea1ed6f2ad6d205cf8e54bb0562af11b0160a6bfa5f499624094
 rustup-init.exe                        = 88d8258dcf6ae4f7a80c7d1088e1f36fa7025a1cfd1343731b4ee6f385121fc0
 sed.exe                                = 4aa7a40b3a0e38e1c56f066d722f8a0c0dd99e6e2842a5d0c57c4f336d80589d
@@ -176,10 +175,10 @@ sparsehash-msvc.patch                  = 138f6567120e233329f26a1ee2485b574603956
 speex-cmake.patch                      = 87e17e7f57660bf884bdf106bbf32972a96bbf4131b2014483f9e14779af9fa1
 twolame.patch                          = ad0bf19387e842ce6070a7a812a80237b16591441f6b822909722d3870a01c88
 yasm-cmake.patch                       = a0c6f4becb5314dbfcf3f845e143bbaf80c216a76612f5e6cb968d3ee1a795b8
-strawberry-msvc-x86_64-debug.tar.xz    = 4edd3ebbeefb8bff7a53d74190028ec3bbf03a79ab573f064f55578aeb367d12
-strawberry-msvc-x86_64-release.tar.xz  = 530daa7994876fbe1b6208823f4fce26af5ba1d68e7c2ed95f9933c595ab5cd7
-strawberry-msvc-x86-debug.tar.xz       = dcb75aa31ee3ab74d02d5581cdf1eae4da419e7ad114f10b7d132bcb74c4d235
-strawberry-msvc-x86-release.tar.xz     = 2a11e110a92d8f2335a8f640b48d7fb1a2b2d96c9029f87b68247a7b54741c4c
+strawberry-msvc-x86-release.tar.xz     = 83a632bb386034729a493d18401e1739df00a536e2e12e014bcb3a6165124b73
+strawberry-msvc-x86-debug.tar.xz       = 948a532919d739e480b9fe253ea388129fb3e8f1684ebf32eb5a75b7c9443410
+strawberry-msvc-x86_64-release.tar.xz  = 5541565ef3e313621db74b8ab440572cbf057d01a072641641d65d405a9a509a
+strawberry-msvc-x86_64-debug.tar.xz    = 4ce9515007ddf7d24fdb7b0333330e7da2262d6d45688f7525c4a1bb420c137f
 '@
 
     $SIGNED_FILES = @'
@@ -308,7 +307,7 @@ https://download.qt.io/official_releases/qt/$($QT_VERSION -replace '\.\d+$')/${Q
 https://github.com/libgme/game-music-emu/releases/download/${LIBGME_VERSION}/libgme-${LIBGME_VERSION}-src.tar.gz
 https://downloads.sourceforge.net/twolame/twolame-${TWOLAME_VERSION}.tar.gz
 https://github.com/sparsehash/sparsehash/archive/refs/tags/sparsehash-${SPARSEHASH_VERSION}.tar.gz
-https://github.com/Tencent/rapidjson/archive/refs/tags/v${RAPIDJSON_VERSION}/rapidjson-${RAPIDJSON_VERSION}.tar.gz
+# https://github.com/Tencent/rapidjson/archive/refs/tags/v${RAPIDJSON_VERSION}/rapidjson-${RAPIDJSON_VERSION}.tar.gz
 # https://github.com/abseil/abseil-cpp/archive/refs/tags/${ABSEIL_VERSION}/abseil-cpp-${ABSEIL_VERSION}.tar.gz
 https://github.com/KDAB/KDSingleApplication/releases/download/v${KDSINGLEAPPLICATION_VERSION}/kdsingleapplication-${KDSINGLEAPPLICATION_VERSION}.tar.gz
 # https://github.com/curl/curl/releases/download/curl-${CURL_VERSION_UNDERSCORE}/curl-${CURL_VERSION}.tar.gz
@@ -347,7 +346,7 @@ https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/d
         $REPO_TARGETS['https://gitlab.freedesktop.org/gstreamer/meson-ports/ffmpeg'] = "meson-$FFMPEG_VERSION"
         # $REPO_TARGETS['https://github.com/frida/proxy-libintl'] = $LIBINTL_BRANCH
         $REPO_TARGETS['https://github.com/ludvikjerabek/getopt-win'] = $GETOPT_BRANCH
-        $REPO_TARGETS['https://github.com/Tencent/rapidjson'] = $RAPIDJSON_BRANCH
+        # $REPO_TARGETS['https://github.com/Tencent/rapidjson'] = $RAPIDJSON_BRANCH
         $REPO_TARGETS['https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs'] = $GSTSPOTIFY_BRANCH, $GSTREAMER_GST_PLUGINS_RS_VERSION
         $REPO_TARGETS['https://github.com/strawberrymusicplayer/qtsparkle'] = $QTSPARKLE_BRANCH
         $REPO_TARGETS['https://github.com/gsauthof/pe-util'] = $PEUTIL_BRANCH

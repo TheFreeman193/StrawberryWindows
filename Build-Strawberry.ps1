@@ -3717,7 +3717,7 @@ Cflags: -I`${includedir}
         "KDsingleapp $KDSINGLEAPPLICATION_VERSION"      = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
         "Qtsparkle ($(GetRepoCommit qtsparkle))"        = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
         "Sparsehash $SPARSEHASH_VERSION"                = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
-        "Rapidjson ($(GetRepoCommit rapidjson))"        = 'BuildRapidjson', '*', "$DependsPath\lib\cmake\RapidJSON\RapidJSONConfig.cmake"
+        # "Rapidjson ($(GetRepoCommit rapidjson))"        = 'BuildRapidjson', '*', "$DependsPath\lib\cmake\RapidJSON\RapidJSONConfig.cmake"
         "Glew $GLEW_VERSION"                            = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
         "Libprojectm $LIBPROJECTM_VERSION"              = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
         # "Gettext $GETTEXT_VERSION"                      = 'BuildGettext', '*', "$DependsPath\bin\gettext.exe"
