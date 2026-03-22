@@ -12,8 +12,8 @@ param(
     [string]$DependsPathRoot = 'R:\strawberry_msvc',
     [string]$TempPath = 'R:\TEMP',
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [ValidateSet('release', 'debug')]
-    [string]$BuildType = 'release',
+    [ValidateSet('Release', 'Debug', 'RelWithDebInfo', 'MinSizeRel')]
+    [string]$BuildType = 'Release',
     [ValidateSet('x64', 'x86')]
     [string]$BuildArch = 'x64',
     [ValidateRange(1, 1e6)]
@@ -37,6 +37,23 @@ begin {
     }
     #region Setup
     $DoContinue = $false
+    switch ($BuildType) {
+        'RelWithDebInfo' {
+            $BuildType = 'release'
+            [string]$BuildTypeCMake = 'RelWithDebInfo'
+            [string]$BuildTypeMeson = 'debugoptimized'
+        }
+        'MinSizeRel' {
+            $BuildType = 'release'
+            [string]$BuildTypeCMake = 'MinSizeRel'
+            [string]$BuildTypeMeson = 'minsize'
+        }
+        default {
+            $BuildType = $BuildType.ToLowerInvariant()
+            [string]$BuildTypeCMake = [cultureinfo]::InvariantCulture.TextInfo.ToTitleCase($BuildType)
+            [string]$BuildTypeMeson = $BuildType
+        }
+    }
     [string]$BuildPath = "${BuildPathRoot}_${BuildType}_$BuildArch"
     if (-not $NoBuild) {
         try { Stop-Transcript } catch {}
@@ -46,8 +63,6 @@ begin {
     Write-Host -fo White ('=' * $Host.UI.RawUI.BufferSize.Width)
     Write-Host -fo White 'Strawberry Windows MSVC Builder'
 
-    [string]$BuildTypeCMake = [cultureinfo]::InvariantCulture.TextInfo.ToTitleCase($BuildType)
-    [string]$BuildTypeMeson = [cultureinfo]::InvariantCulture.TextInfo.ToLower($BuildType)
     [string]$CMakeGenerator = 'Ninja'
     [bool]$ISDEBUG = $BuildType -eq 'debug'
     [string]$DebugPostfix = if ($ISDEBUG) { 'd' } else { '' }
@@ -73,6 +88,15 @@ includedir=`${prefix}/include
     $env:CL = '-MP'
     $env:PATH = $env:PATH -replace 'C:\\Strawberry\\c\\bin'
     $env:PATH = ("$DependsPath\bin", "$env:PATH" -join ';').Trim(';') -replace ';{2,}', ';'
+
+    [string[]]$GlobalCMakeArgs = @(
+        '--log-level=DEBUG'
+        "-DCMAKE_BUILD_TYPE=$BuildTypeCMake"
+        "-DCMAKE_INSTALL_PREFIX=$DependsPathForward"
+        "-DCMAKE_PREFIX_PATH=$DependsPathForward/lib/cmake"
+        "-DCMAKE_IGNORE_PATH=C:\Strawberry\perl\lib;C:\Strawberry\c\lib"
+        "-DPKG_CONFIG_EXECUTABLE=$DependsPathForward/bin/pkgconf.exe"
+    )
 
     Write-Host -fo Gray 'Configuring Visual Studio 2022 Dev Console...'
     if ([string]::IsNullOrWhiteSpace($env:VSCMD_VER) -or $env:VSCMD_VER -notmatch '^17\.\d+\.\d+$' -or $env:VSCMD_ARG_TGT_ARCH -ne $BuildArch) {
@@ -105,7 +129,7 @@ includedir=`${prefix}/include
         $PSCmdlet.WriteError($Err)
         return
     }
-    $env:YASMPATH = "$VCPath\"
+    $env:YASMPATH = "$DependsPath\bin\"
 
     Write-Host -fo Cyan ('{0,25}' -f 'Type: ') -no
     Write-Host -fo $(if ($ISDEBUG) { 'Magenta' } else { 'Green' }) $BuildType
@@ -279,11 +303,7 @@ process {
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -329,11 +349,7 @@ process {
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DMI_BUILD_SHARED=ON `
@@ -372,11 +388,7 @@ process {
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_TESTING=OFF `
             -DBUILD_STATIC_LIBS=OFF | Out-Default
@@ -401,11 +413,7 @@ process {
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -504,6 +512,11 @@ Requires: libssl libcrypto
             $null = New-Item -ItemType Directory "$LocalBuildPath\gmp"
             Write-Host -fo Cyan '    Copy source repo...'
             xcopy.exe /B /Y /R /I /H /E /Q "$DownloadPath\gmp" "$LocalBuildPath\gmp" | Out-Default
+            if ($LASTEXITCODE -ne 0) { return }
+        }
+        if (-not (Test-Path "$LocalBuildPath\gmp\SMP\Backup\libgmp.vcxproj")) {
+            Write-Host -fo Cyan '    Upgrade VS solution...'
+            Start-Process devenv.exe -ArgumentList "$LocalBuildPath\gmp\SMP\libgmp.vcxproj", '/upgrade' -Wait
             if ($LASTEXITCODE -ne 0) { return }
         }
         Write-Host -fo Cyan '    MSBuild build...'
@@ -654,43 +667,9 @@ URL: https://www.gnutls.org/
 Version: $GNUTLS_VERSION
 Libs: -L`${libdir} -lgnutls
 Cflags: -I`${includedir}
-"@ # No $DebugPostfix?
-        if (-not $?) { return }
-    }
-    <#
-    function BuildGnutls {
-        $LocalBuildPath = "$BuildPath\gnutls-$GNUTLS_VERSION"
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Extract archive...'
-            7z.exe x -aoa "$DownloadPath\libgnutls_${GNUTLS_VERSION}_msvc17.zip" -o"$LocalBuildPath" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Write-Host -fo Cyan '    Copy binaries...'
-        Copy-Item "$LocalBuildPath\bin\$BuildArch\*" "$DependsPath\bin\" -Recurse -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy libraries...'
-        Copy-Item "$LocalBuildPath\lib\$BuildArch\gnutls.*" "$DependsPath\lib\" -Recurse -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy headers...'
-        if (-not (Test-Path "$DependsPath\include\gnutls" -PathType Container)) {
-            $null = New-Item "$DependsPath\include\gnutls" -ItemType Directory -Force
-            if (-not $?) { return }
-        }
-        Copy-Item "$LocalBuildPath\include\gnutls\*.h" "$DependsPath\include\gnutls" -Recurse -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Write pkgconfig...'
-        Set-Content -Path "$DependsPath\lib\pkgconfig\gnutls.pc" -Value @"
-$PkgconfTemplate
-
-Name: gnutls
-Description: gnutls
-URL: https://www.gnutls.org/
-Version: $GNUTLS_VERSION
-Libs: -L`${libdir} -lgnutls
-Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
     }
-#>
     function BuildLibpng {
         $LocalBuildPath = "$BuildPath\libpng-$LIBPNG_VERSION"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
@@ -710,11 +689,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" | Out-Default
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
         cmake.exe --build "$LocalBuildPath\build" | Out-Default
@@ -742,11 +717,7 @@ Cflags: -I`${includedir}
         }
         $SIMD = if ($BuildArch -in 'x86', 'x64') { 'ON' } else { 'OFF' }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DENABLE_SHARED=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
@@ -772,11 +743,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DPCRE2_BUILD_PCRE2_16=ON `
@@ -808,11 +775,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -835,11 +798,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DBUILD_TESTING=OFF `
@@ -865,11 +824,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_TESTING=OFF | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -1012,11 +967,7 @@ Requires: icu-i18n
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DEXPAT_SHARED_LIBS=ON `
             -DEXPAT_BUILD_DOCS=OFF `
             -DEXPAT_BUILD_EXAMPLES=OFF `
@@ -1085,11 +1036,7 @@ Requires: icu-i18n
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DICU_ROOT="$DependsPathForward" `
             -DBUILD_SHARED_LIBS=ON `
             -DLIBXML2_WITH_PYTHON=OFF `
@@ -1124,11 +1071,7 @@ Requires: icu-i18n
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -1196,11 +1139,7 @@ Requires: icu-i18n
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -1271,11 +1210,7 @@ Requires: icu-i18n
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -1336,13 +1271,16 @@ Cflags: -I`${includedir}
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
-                --prefix="$DependsPath" `
+                --prefix="$DependsPathForward" `
                 --pkg-config-path="$DependsPath\lib\pkgconfig" `
                 --includedir="$DependsPath\include" `
                 --libdir="$DependsPath\lib" `
+                --wrap-mode=nodownload `
                 -Dtests=false `
-                -Dc_args="-I$DependsPathForward/include" `
+                -Dc_args="-I$DependsPath\include" `
+                -Dcpp_args="-I$DependsPath\include" `
                 -Dc_link_args="-L$DependsPath\lib" `
+                -Dcpp_link_args="-L$DependsPath\lib" `
                 "$LocalBuildPath\build" $LocalBuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
@@ -1440,6 +1378,8 @@ Cflags: -I`${includedir}
             7z.exe x -aoa "$DownloadPath\glib-networking-$GLIB_NETWORKING_VERSION.tar" -o"$BuildPath" | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
+        Write-Host -fo Cyan '    Patch build configuration...'
+        Get-Content "$DownloadPath\glib-networking.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
@@ -1481,11 +1421,7 @@ Cflags: -I`${includedir}
         Write-Host -fo White '    Harfbuzz available: ' -NoNewline
         if ($HarfbuzzDisable -eq 'OFF') { Write-Host -fo Green 'YES' } else { Write-Host -fo Red 'NO' }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DFT_DISABLE_HARFBUZZ="$HarfbuzzDisable" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -1551,7 +1487,6 @@ Cflags: -I`${includedir}
             7z.exe x -aoa "$DownloadPath\harfbuzz-$HARFBUZZ_VERSION.tar" -o"$BuildPath" | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
-        Write-Host -fo Cyan '    Patch alloca (Linux) -> _alloca (MSVC)...'
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
@@ -1590,11 +1525,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DINSTALL_DOCS=OFF `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
@@ -1619,11 +1550,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DINSTALL_DOCS=OFF `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
@@ -1650,11 +1577,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_DOCS=OFF `
             -DBUILD_EXAMPLES=OFF `
@@ -1682,11 +1605,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_TESTING=OFF `
             -DWAVPACK_BUILD_DOCS=OFF `
@@ -1729,11 +1648,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -1759,11 +1674,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -1790,11 +1701,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -1826,11 +1733,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S "$LocalBuildPath\ports\cmake" -B "$LocalBuildPath\build_cmake" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S "$LocalBuildPath\ports\cmake" -B "$LocalBuildPath\build_cmake" -G $CMakeGenerator `
             -DYASM_ASSEMBLER="$DependsPathForward/bin/vsyasm.exe" `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_PROGRAMS=OFF `
@@ -1986,11 +1889,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="Debug" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DSHARED=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
@@ -2037,11 +1936,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build_cmake" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build_cmake" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -2067,11 +1962,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -2094,11 +1985,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_PROGRAMS=OFF | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -2124,11 +2011,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -2145,41 +2028,23 @@ Cflags: -I`${includedir}
             tar.exe -xf "$DownloadPath\faac-$FAAC_VERSION.tar.gz" -C $BuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
-        Write-Host -fo Cyan '    Patch build configuration...'
-        Get-Content "$DownloadPath\faac-msvc.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
-        if ($Error.Count -gt 0 -or $LASTEXITCODE -gt 1) { return }
-        if (-not (Test-Path "$LocalBuildPath\project\msvc\Backup\faac.sln")) {
-            Write-Host -fo Cyan '    Upgrade VS solution...'
-            Start-Process devenv.exe -ArgumentList "$LocalBuildPath\project\msvc\faac.sln", '/upgrade' -Wait
+        if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
+            Write-Host -fo Cyan '    Meson configure...'
+            meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
+                --prefix="$DependsPath" `
+                --pkg-config-path="$DependsPath\lib\pkgconfig" `
+                --wrap-mode=nodownload `
+                -Dc_args="-I$DependsPathForward/include" `
+                -Dcpp_args="-I$DependsPathForward/include" `
+                -Dfrontend=false `
+                "$LocalBuildPath\build" $LocalBuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
-        Push-Location "$LocalBuildPath\project\msvc"
-        Write-Host -fo Cyan '    MSBuild build...'
-        msbuild.exe 'faac.sln' -p:Configuration="$BuildType" -p:Platform="$BuildArch32Alt" -p:SkipUWP=true | Out-Default
-        Pop-Location
+        Write-Host -fo Cyan '    Ninja build...'
+        ninja.exe -C "$LocalBuildPath\build" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy headers...'
-        Copy-Item "$LocalBuildPath\include\*.h" "$DependsPath\include\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy libraries...'
-        Copy-Item "$LocalBuildPath\project\msvc\bin\$BuildType\libfaac_dll.lib" "$DependsPath\lib\" -Force
-        if (-not $?) { return }
-        Copy-Item "$LocalBuildPath\project\msvc\bin\$BuildType\libfaac_dll.lib" "$DependsPath\lib\faac.lib" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy binaries...'
-        Copy-Item "$LocalBuildPath\project\msvc\bin\$BuildType\*.dll" "$DependsPath\bin\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Write pkgconfig...'
-        Set-Content -Path "$DependsPath\lib\pkgconfig\faac.pc" -Force -Value @"
-$PkgconfTemplate
-
-Name: faac
-Description: An Advanced Audio Coder (MPEG2-AAC, MPEG4-AAC)
-URL: https://github.com/knik0/faac
-Version: $FAAC_VERSION
-Libs: -L`${libdir} -lfaac
-Cflags: -I`${includedir}
-"@
+        Write-Host -fo Cyan '    Ninja install...'
+        ninja.exe -C "$LocalBuildPath\build" install | Out-Default
     }
 
     function BuildUtfcpp {
@@ -2195,11 +2060,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -2222,11 +2083,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -2252,11 +2109,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -2282,11 +2135,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -2339,11 +2188,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DFFMPEG_ROOT="$DependsPath" `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
@@ -2517,6 +2362,7 @@ Cflags: -I`${includedir}
                 -Dwaveform=enabled `
                 -Dwavpack=enabled `
                 -Dsoup=enabled `
+                -Dmatroska=enabled `
                 -Dhls-crypto=openssl `
                 "$LocalBuildPath\build" $LocalBuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
@@ -2726,11 +2572,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_TESTING=OFF `
             -DCMAKE_CXX_STANDARD=17 `
@@ -2759,11 +2601,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -Dprotobuf_ABSL_PROVIDER="package" `
             -DBUILD_SHARED_LIBS=ON `
             -Dprotobuf_BUILD_SHARED_LIBS=ON `
@@ -2805,11 +2643,7 @@ Cflags: -I`${includedir}
         Get-Content "$DownloadPath\qtbase-qwindowswindow.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         # Get-Content "$DownloadPath\qtbase-networkcache.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G Ninja `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G Ninja `
             -DICU_ROOT="$DependsPath" `
             -DBUILD_SHARED_LIBS=ON `
             -DQT_BUILD_EXAMPLES=OFF `
@@ -2915,12 +2749,7 @@ Cflags: -I`${includedir}
             }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
-            -DCMAKE_PREFIX_PATH="$DependsPathForward/lib/cmake" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DFEATURE_jasper=ON `
@@ -2955,12 +2784,7 @@ Cflags: -I`${includedir}
             }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
-            -DCMAKE_PREFIX_PATH="$DependsPathForward/lib/cmake" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DQT_BUILD_EXAMPLES=OFF `
@@ -2982,12 +2806,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
-            -DCMAKE_PREFIX_PATH="$DependsPathForward/lib/cmake" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_WITH_QT6=ON `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         Write-Host -fo Cyan '    CMake build...'
@@ -3043,11 +2862,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DCMAKE_INSTALL_DIR="$DependsPath\lib\cmake\RapidJSON" `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
@@ -3075,12 +2890,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
-            -DCMAKE_PREFIX_PATH="$DependsPathForward/lib/cmake" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DKDSingleApplication_QT6=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -3110,11 +2920,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S "$LocalBuildPath\build\cmake" -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S "$LocalBuildPath\build\cmake" -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -3138,11 +2944,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
@@ -3177,11 +2979,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
@@ -3225,11 +3023,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DBUILD_COMMAND_LINE_TOOLS=OFF | Out-Default
@@ -3254,11 +3048,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DBUILD_COMMAND_LINE_TOOLS=OFF | Out-Default
@@ -3287,11 +3077,7 @@ Cflags: -I`${includedir}
         (Get-Content "$LocalSourcePath\CMakeLists.txt" -ErrorAction Stop).Where{ $_ -inotmatch '^\s*include\(InstallRequiredSystemLibraries\)\s*$' } | Set-Content "$LocalSourcePath\CMakeLists.txt"
         if (-not $?) { return }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalSourcePath -B $LocalBuildPath -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalSourcePath -B $LocalBuildPath -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DJAS_ENABLE_JP2_CODEC=ON `
@@ -3324,11 +3110,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -Djpeg=ON `
@@ -3356,11 +3138,7 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
         }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="DEBUG" -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_INSTALL_PREFIX="$DependsPathForward" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkgconf.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
             -DBUILD_STATIC_LIBS=OFF `
             -DWEBP_LINK_STATIC=OFF `
@@ -3508,11 +3286,7 @@ Cflags: -I`${includedir}
         $IncludeSpotify = if (Test-Path "$DependsPath\lib\gstreamer-*\gstspotify.dll") { 'ON' } else { 'OFF' }
         $EnableCon = if ($EnableStrawberryConsole) { 'ON' } else { 'OFF' }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe --log-level="TRACE" -S $LocalBuildPath -B "$LocalBuildPath\build" -G 'Visual Studio 17 2022' -A $BuildArch32Alt `
-            -DCMAKE_BUILD_TYPE="$BuildTypeCMake" `
-            -DCMAKE_PREFIX_PATH="$DependsPathForward/lib/cmake" `
-            -DCMAKE_IGNORE_PATH="C:\Strawberry\perl\lib;C:\Strawberry\c\lib" `
-            -DPKG_CONFIG_EXECUTABLE="$DependsPathForward/bin/pkg-config.exe" `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G 'Visual Studio 17 2022' -A $BuildArch32Alt `
             -DICU_ROOT="$DependsPathForward" `
             -DARCH="$StrawbArch" `
             -DENABLE_WIN32_CONSOLE="$EnableCon" `
@@ -3708,12 +3482,12 @@ Cflags: -I`${includedir}
         "Gstpluginsugly $GSTREAMER_VERSION"             = 'BuildGstpluginsugly', '*', "$DependsPath\lib\gstreamer-1.0\gstasf.lib"
         "Gstlibav $GSTREAMER_VERSION"                   = 'BuildGstlibav', '*', "$DependsPath\lib\gstreamer-1.0\gstlibav.lib"
         "Gstspotify $GSTREAMER_GST_PLUGINS_RS_VERSION"  = 'BuildGstspotify', 'x64', "$DependsPath\lib\gstreamer-1.0\gstspotify.dll"
-        "Abseil $ABSEIL_VERSION"                        = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc" # TODO CHECK NEEDED
-        "Protobuf $PROTOBUF_VERSION"                    = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"  # TODO CHECK NEEDED
+        "Abseil $ABSEIL_VERSION"                        = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc"
+        "Protobuf $PROTOBUF_VERSION"                    = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"
         "Qtbase $QTBaseVer"                             = 'BuildQtbase', '*', "$DependsPath\bin\qt-configure-module.bat"
         "Qttools $QTToolsVer"                           = 'BuildQttools', '*', "$DependsPath\lib\cmake\Qt6Linguist\Qt6LinguistConfig.cmake"
         "Qtimageformats $QTToolsVer"                    = 'BuildQtimageformats', '*', "$DependsPath\plugins\imageformats\qwebp$DebugPostfix.dll"
-        "Qtgrpc $QTGrpcVer"                             = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"  # TODO CHECK NEEDED
+        "Qtgrpc $QTGrpcVer"                             = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"
         "KDsingleapp $KDSINGLEAPPLICATION_VERSION"      = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
         "Qtsparkle ($(GetRepoCommit qtsparkle))"        = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
         "Sparsehash $SPARSEHASH_VERSION"                = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
