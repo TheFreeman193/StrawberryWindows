@@ -94,7 +94,7 @@ includedir=`${prefix}/include
         "-DCMAKE_BUILD_TYPE=$BuildTypeCMake"
         "-DCMAKE_INSTALL_PREFIX=$DependsPathForward"
         "-DCMAKE_PREFIX_PATH=$DependsPathForward/lib/cmake"
-        "-DCMAKE_IGNORE_PATH=C:\Strawberry\perl\lib;C:\Strawberry\c\lib"
+        '-DCMAKE_IGNORE_PATH=C:\Strawberry\perl\lib;C:\Strawberry\c\lib'
         "-DPKG_CONFIG_EXECUTABLE=$DependsPathForward/bin/pkgconf.exe"
     )
 
@@ -288,11 +288,11 @@ process {
     #region Build Steps
 
     function BuildYasm {
-        $LocalBuildPath = "$BuildPath\yasm-$YASM_VERSION"
+        $LocalBuildPath = "$BuildPath\yasm"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Extract source...'
-            tar.exe -xf "$DownloadPath\yasm-$YASM_VERSION.tar.gz" -C $BuildPath | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
+            Write-Host -fo Cyan '    Copy source repo...'
+            Copy-Item "$DownloadPath\yasm" $LocalBuildPath -Recurse -Force
+            if (-not $?) { return }
         }
         Write-Host -fo Cyan '    Patch build configuration...'
         Get-Content "$DownloadPath\yasm-cmake.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
@@ -423,21 +423,27 @@ process {
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy pkgconfig...'
-        Copy-Item "$DependsPath\share\pkgconfig\zlib.pc" "$DependsPath\lib\pkgconfig\" -Force
+        if ((Test-Path "$DependsPath\share\pkgconfig\zlib.pc") -and -not (Test-Path "$DependsPath\lib\pkgconfig\zlib.pc")) {
+            Write-Host -fo Cyan '    Copy pkgconfig...'
+            Copy-Item "$DependsPath\share\pkgconfig\zlib.pc" "$DependsPath\lib\pkgconfig\" -Force
+        }
         if (-not $?) { return }
-        Write-Host -fo Cyan "    Patch pkgconfig z -> zlib$DebugPostfix..."
-        foreach ($File in (Get-ChildItem "$DependsPath\*\pkgconfig\zlib.pc")) {
-            (Get-Content $File) -creplace '-lz', "-lzlib$DebugPostfix" | Set-Content $File
+        if ($ISDEBUG) {
+            Write-Host -fo Cyan "    Patch pkgconfig z -> z$DebugPostfix..."
+            foreach ($File in (Get-ChildItem "$DependsPath\*\pkgconfig\zlib.pc")) {
+                (Get-Content $File) -creplace '-lz\b', "-lz$DebugPostfix" | Set-Content $File
+                if (-not $?) { return }
+            }
+            if ($LASTEXITCODE -ne 0) { return }
+        }
+        Write-Host -fo Cyan '    Copy libraries...'
+        if ((Test-Path "$DependsPath\lib\z$DebugPostfix.lib") -and -not (Test-Path "$DependsPath\lib\z.lib")) {
+            Copy-Item "$DependsPath\lib\z$DebugPostfix.lib" "$DependsPath\lib\z.lib" -Force
             if (-not $?) { return }
         }
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy libraries...'
-        Copy-Item "$DependsPath\lib\zlib$DebugPostfix.lib" "$DependsPath\lib\z.lib" -Force
-        if (-not (Test-Path "$DependsPath\lib\zlib.lib")) { Copy-Item "$DependsPath\lib\zlib$DebugPostfix.lib" "$DependsPath\lib\zlib.lib" -Force }
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Remove static libraries...'
-        Remove-Item "$DependsPath\lib\zlibstatic*.lib" -Force
+        if (-not (Test-Path "$DependsPath\lib\zlib$DebugPostfix.lib")) { Copy-Item "$DependsPath\lib\z$DebugPostfix.lib" "$DependsPath\lib\zlib$DebugPostfix.lib" -Force }
+        # Write-Host -fo Cyan '    Remove static libraries...'
+        # Remove-Item "$DependsPath\lib\zlibstatic*.lib" -Force
     }
 
     function BuildOpenSSL {
@@ -615,7 +621,7 @@ Cflags: -I`${includedir}
             xcopy.exe /B /Y /R /I /H /E /Q "$DownloadPath\gnutls" "$LocalBuildPath\gnutls" | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
-        Set-Content "$LocalBuildPath\gnutls\SMP\inject_zlib.props" -Value @"
+        <# Set-Content "$LocalBuildPath\gnutls\SMP\inject_zlib.props" -Value @"
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemDefinitionGroup>
     <ClCompile>
@@ -626,8 +632,9 @@ Cflags: -I`${includedir}
     </Link>
   </ItemDefinitionGroup>
 </Project>
-"@
+"@ #>
         Push-Location "$LocalBuildPath\gnutls\SMP\"
+        Write-Host -fo Cyan '    Fetch GnuTLS dependencies...'
         "`r`n" | & '.\project_get_dependencies.bat'
         if ($LASTEXITCODE -ne 0) { Pop-Location; return }
         Write-Host -fo Cyan '    GMP static dependency build...'
@@ -1370,13 +1377,19 @@ Cflags: -I`${includedir}
     }
 
     function BuildGlibNetworking {
-        $LocalBuildPath = "$BuildPath\glib-networking-$GLIB_NETWORKING_VERSION"
+        # $LocalBuildPath = "$BuildPath\glib-networking-$GLIB_NETWORKING_VERSION"
+        # if (-not (Test-Path $LocalBuildPath -PathType Container)) {
+        #     Write-Host -fo Cyan '    Extract source...'
+        #     7z.exe x -aos "$DownloadPath\glib-networking-$GLIB_NETWORKING_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
+        #     if ($LASTEXITCODE -ne 0) { return }
+        #     7z.exe x -aoa "$DownloadPath\glib-networking-$GLIB_NETWORKING_VERSION.tar" -o"$BuildPath" | Out-Default
+        #     if ($LASTEXITCODE -ne 0) { return }
+        # }
+        $LocalBuildPath = "$BuildPath\glib-networking"
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Extract source...'
-            7z.exe x -aos "$DownloadPath\glib-networking-$GLIB_NETWORKING_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-            7z.exe x -aoa "$DownloadPath\glib-networking-$GLIB_NETWORKING_VERSION.tar" -o"$BuildPath" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
+            Write-Host -fo Cyan '    Copy source repo...'
+            Copy-Item "$DownloadPath\glib-networking" $LocalBuildPath -Recurse -Force
+            if (-not $?) { return }
         }
         Write-Host -fo Cyan '    Patch build configuration...'
         Get-Content "$DownloadPath\glib-networking.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
@@ -1392,6 +1405,7 @@ Cflags: -I`${includedir}
                 -Dopenssl=enabled `
                 -Dgnome_proxy=disabled `
                 -Dlibproxy=disabled `
+                -Dtests=false `
                 "$LocalBuildPath\build" $LocalBuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
@@ -2218,6 +2232,8 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        Write-Host -fo Cyan '    Patch build configuration...'
+        Get-Content "$DownloadPath\gstreamer-macros-restrict.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
@@ -2640,6 +2656,8 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        Write-Host -fo Cyan '    Patch build configuration...'
+        if ($BuildArch -eq 'x86') { $QWinRing = 'OFF' } else { $QWinRing = 'ON' }
         Get-Content "$DownloadPath\qtbase-qwindowswindow.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         # Get-Content "$DownloadPath\qtbase-networkcache.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         Write-Host -fo Cyan '    CMake configure...'
@@ -2686,6 +2704,7 @@ Cflags: -I`${includedir}
             -DFEATURE_system_pcre2=ON `
             -DFEATURE_system_freetype=ON `
             -DFEATURE_system_harfbuzz=ON `
+            -DFEATURE_windows_ioring="$QWinRing" `
             -DFEATURE_system_sqlite=ON | Out-Default
 
         Write-Host -fo Cyan '    CMake build...'
@@ -3413,91 +3432,91 @@ Cflags: -I`${includedir}
         $QTBaseVer = $QTToolsVer = <# $QTGrpcVer =  #>$QT_VERSION
     }
     $BUILD_TARGETS = [ordered]@{
-        "pkgconf $PKGCONF_VERSION"                      = 'BuildPkgConf', '*', "$DependsPath\bin\pkgconf.exe"
-        "Yasm $YASM_VERSION"                            = 'BuildYasm', '*', "$DependsPath\bin\yasm.exe"
-        "Libintl $PROXY_LIBINTL_VERSION"                = 'BuildLibintl', '*', "$DependsPath\lib\intl.lib"
+        "pkgconf $PKGCONF_VERSION"                     = 'BuildPkgConf', '*', "$DependsPath\bin\pkgconf.exe"
+        "Yasm $YASM_VERSION"                           = 'BuildYasm', '*', "$DependsPath\bin\yasm.exe"
+        "Libintl $PROXY_LIBINTL_VERSION"               = 'BuildLibintl', '*', "$DependsPath\lib\intl.lib"
         # "mimalloc $MIMALLOC_VERSION"                    = 'BuildMimAlloc', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\mimalloc.pc"
-        "getopt-win ($(GetRepoCommit getopt-win))"      = 'BuildGetOpt', '*', "$DependsPath\lib\getopt.lib"
-        "zlib $ZLIB_VERSION"                            = 'BuildZlib', '*', "$DependsPath\lib\z.lib"
-        "OpenSSL $OPENSSL_VERSION"                      = 'BuildOpenSSL', '*', "$DependsPath\lib\pkgconfig\openssl.pc"
-        "GMP $GMP_VERSION"                              = 'BuildGmp', '*', "$DependsPath\lib\pkgconfig\gmp.pc"
-        "Nettle $NETTLE_VERSION"                        = 'BuildNettle', '*', "$DependsPath\lib\pkgconfig\nettle.pc"
-        "GnuTLS $GNUTLS_VERSION"                        = 'BuildGnutls', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\gnutls.pc"
-        "libpng $LIBPNG_VERSION"                        = 'BuildLibpng', '*', "$DependsPath\lib\pkgconfig\libpng.pc"
-        "libjpeg $LIBJPEG_VERSION"                      = 'BuildLibjpeg', '*', "$DependsPath\lib\pkgconfig\libjpeg.pc"
-        "PCRE2 $PCRE2_VERSION"                          = 'BuildPcre2', '*', "$DependsPath\lib\pkgconfig\libpcre2-16.pc"
-        "bzip2 $BZIP2_VERSION"                          = 'BuildBzip2', '*', "$DependsPath\lib\pkgconfig\bzip2.pc"
-        "xz $XZ_VERSION"                                = 'BuildXz', '*', "$DependsPath\lib\pkgconfig\liblzma.pc"
-        "Brotli $BROTLI_VERSION"                        = 'BuildBrotli', '*', "$DependsPath\lib\pkgconfig\libbrotlicommon.pc"
+        "getopt-win ($(GetRepoCommit getopt-win))"     = 'BuildGetOpt', '*', "$DependsPath\lib\getopt.lib"
+        "zlib $ZLIB_VERSION"                           = 'BuildZlib', '*', "$DependsPath\lib\z.lib"
+        "OpenSSL $OPENSSL_VERSION"                     = 'BuildOpenSSL', '*', "$DependsPath\lib\pkgconfig\openssl.pc"
+        # "GMP $GMP_VERSION"                              = 'BuildGmp', '*', "$DependsPath\lib\pkgconfig\gmp.pc"
+        # "Nettle $NETTLE_VERSION"                        = 'BuildNettle', '*', "$DependsPath\lib\pkgconfig\nettle.pc"
+        "GnuTLS $GNUTLS_VERSION"                       = 'BuildGnutls', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\gnutls.pc"
+        "libpng $LIBPNG_VERSION"                       = 'BuildLibpng', '*', "$DependsPath\lib\pkgconfig\libpng.pc"
+        "libjpeg $LIBJPEG_VERSION"                     = 'BuildLibjpeg', '*', "$DependsPath\lib\pkgconfig\libjpeg.pc"
+        "PCRE2 $PCRE2_VERSION"                         = 'BuildPcre2', '*', "$DependsPath\lib\pkgconfig\libpcre2-16.pc"
+        "bzip2 $BZIP2_VERSION"                         = 'BuildBzip2', '*', "$DependsPath\lib\pkgconfig\bzip2.pc"
+        "xz $XZ_VERSION"                               = 'BuildXz', '*', "$DependsPath\lib\pkgconfig\liblzma.pc"
+        "Brotli $BROTLI_VERSION"                       = 'BuildBrotli', '*', "$DependsPath\lib\pkgconfig\libbrotlicommon.pc"
         # "Iconv ($(GetRepoCommit libiconv-for-Windows))" = 'BuildLibiconv', '*', "$DependsPath\lib\libiconv*.lib"
-        "Icu4c $ICU4C_VERSION"                          = 'BuildIcu4c', '*', "$DependsPath\lib\pkgconfig\icu-uc.pc"
-        "Pixman $PIXMAN_VERSION"                        = 'BuildPixman', '*', "$DependsPath\lib\pkgconfig\pixman-1.pc"
-        "Expat $EXPAT_VERSION"                          = 'BuildExpat', '*', "$DependsPath\lib\pkgconfig\expat.pc"
-        "Boost $BOOST_VERSION"                          = 'BuildBoost', '*', "$DependsPath\include\boost\config.hpp"
-        "Libxml2 $LIBXML2_VERSION"                      = 'BuildLibxml2', '*', "$DependsPath\lib\pkgconfig\libxml-2.0.pc"
-        "Nghttp2 $NGHTTP2_VERSION"                      = 'BuildNghttp2', '*', "$DependsPath\lib\pkgconfig\libnghttp2.pc"
-        "Libffi ($(GetRepoCommit libffi))"              = 'BuildLibffi', '*', "$DependsPath\lib\pkgconfig\libffi.pc"
-        "Dlfcn $DLFCN_VERSION"                          = 'BuildDlfcn', '*', "$DependsPath\include\dlfcn.h"
-        "Libpsl $LIBPSL_VERSION"                        = 'BuildLibpsl', '*', "$DependsPath\lib\pkgconfig\libpsl.pc"
-        "Orc $ORC_VERSION"                              = 'BuildOrc', '*', "$DependsPath\lib\pkgconfig\orc-0.4.pc"
+        "Icu4c $ICU4C_VERSION"                         = 'BuildIcu4c', '*', "$DependsPath\lib\pkgconfig\icu-uc.pc"
+        "Pixman $PIXMAN_VERSION"                       = 'BuildPixman', '*', "$DependsPath\lib\pkgconfig\pixman-1.pc"
+        "Expat $EXPAT_VERSION"                         = 'BuildExpat', '*', "$DependsPath\lib\pkgconfig\expat.pc"
+        "Boost $BOOST_VERSION"                         = 'BuildBoost', '*', "$DependsPath\include\boost\config.hpp"
+        "Libxml2 $LIBXML2_VERSION"                     = 'BuildLibxml2', '*', "$DependsPath\lib\pkgconfig\libxml-2.0.pc"
+        "Nghttp2 $NGHTTP2_VERSION"                     = 'BuildNghttp2', '*', "$DependsPath\lib\pkgconfig\libnghttp2.pc"
+        "Libffi ($(GetRepoCommit libffi))"             = 'BuildLibffi', '*', "$DependsPath\lib\pkgconfig\libffi.pc"
+        "Dlfcn $DLFCN_VERSION"                         = 'BuildDlfcn', '*', "$DependsPath\include\dlfcn.h"
+        "Libpsl $LIBPSL_VERSION"                       = 'BuildLibpsl', '*', "$DependsPath\lib\pkgconfig\libpsl.pc"
+        "Orc $ORC_VERSION"                             = 'BuildOrc', '*', "$DependsPath\lib\pkgconfig\orc-0.4.pc"
         # "Libcurl $CURL_VERSION"                         = 'BuildLibcurl', '*', "$DependsPath\lib\pkgconfig\libcurl.pc"
-        "Sqlite $SQLITE_VERSION"                        = 'BuildSqlite', '*', "$DependsPath\lib\pkgconfig\sqlite3.pc"
-        "Glib $GLIB_VERSION"                            = 'BuildGlib', '*', "$DependsPath\lib\pkgconfig\glib-2.0.pc"
+        "Sqlite $SQLITE_VERSION"                       = 'BuildSqlite', '*', "$DependsPath\lib\pkgconfig\sqlite3.pc"
+        "Glib $GLIB_VERSION"                           = 'BuildGlib', '*', "$DependsPath\lib\pkgconfig\glib-2.0.pc"
         # "Libproxy $LIBPROXY_VERSION"                    = 'BuildLibproxy', '*', "$DependsPath\lib\libproxy.lib" # Doesn't compile with MSVC
-        "Libsoup $LIBSOUP_VERSION"                      = 'BuildLibsoup', '*', "$DependsPath\lib\pkgconfig\libsoup-3.0.pc"
-        "GlibNetworking $GLIB_NETWORKING_VERSION"       = 'BuildGlibNetworking', '*', "$DependsPath\lib\gio\modules\gioopenssl.lib"
-        "Freetype $FREETYPE_VERSION"                    = 'BuildFreetype', '*', "$DependsPath\lib\freetype.lib"
+        "Libsoup $LIBSOUP_VERSION"                     = 'BuildLibsoup', '*', "$DependsPath\lib\pkgconfig\libsoup-3.0.pc"
+        "GlibNetworking $GLIB_NETWORKING_VERSION"      = 'BuildGlibNetworking', '*', "$DependsPath\lib\gio\modules\gioopenssl.lib"
+        "Freetype $FREETYPE_VERSION"                   = 'BuildFreetype', '*', "$DependsPath\lib\freetype.lib"
         # "Cairo $CAIRO_VERSION"                          = 'BuildCairo', '*', "$DependsPath\lib\pkgconfig\cairo.pc"
-        "Harfbuzz $HARFBUZZ_VERSION"                    = 'BuildHarfbuzz', '*', "$DependsPath\lib\harfbuzz*.lib"
-        "Jasper $JASPER_VERSION"                        = 'BuildJasper', '*', "$DependsPath\lib\pkgconfig\jasper.pc"
-        "Tiff $TIFF_VERSION"                            = 'BuildTiff', '*', "$DependsPath\lib\pkgconfig\libtiff-4.pc"
-        "Libwebp $LIBWEBP_VERSION"                      = 'BuildLibWebp', '*', "$DependsPath\lib\pkgconfig\libwebp.pc"
-        "Libogg $LIBOGG_VERSION"                        = 'BuildLibogg', '*', "$DependsPath\lib\pkgconfig\ogg.pc"
-        "Libvorbis $LIBVORBIS_VERSION"                  = 'BuildLibvorbis', '*', "$DependsPath\lib\pkgconfig\vorbis.pc"
-        "Flac $FLAC_VERSION"                            = 'BuildFlac', '*', "$DependsPath\lib\pkgconfig\flac.pc"
-        "Wavpack $WAVPACK_VERSION"                      = 'BuildWavpack', '*', "$DependsPath\lib\pkgconfig\wavpack.pc"
-        "Opus $OPUS_VERSION"                            = 'BuildOpus', '*', "$DependsPath\lib\pkgconfig\opus.pc"
-        "Opusfile $OPUSFILE_VERSION"                    = 'BuildOpusfile', '*', "$DependsPath\bin\opusfile.dll"
-        "Speex $SPEEX_VERSION"                          = 'BuildSpeex', '*', "$DependsPath\lib\pkgconfig\speex.pc"
-        "Libmpg123 $MPG123_VERSION"                     = 'BuildLibmpg123', '*', "$DependsPath\lib\pkgconfig\libmpg123.pc"
-        "Mp3lame $LAME_VERSION"                         = 'BuildLame', '*', "$DependsPath\lib\pkgconfig\mp3lame.pc"
-        "Twolame $TWOLAME_VERSION"                      = 'BuildTwolame', '*', "$DependsPath\lib\libtwolame_dll.lib"
-        "Fftw3 $FFTW_VERSION"                           = 'BuildFftw3', '*', "$DependsPath\lib\pkgconfig\fftw3.pc"
-        "Musepack $MUSEPACK_VERSION"                    = 'BuildMusepack', '*', "$DependsPath\lib\pkgconfig\mpcdec.pc"
-        "Libopenmpt $LIBOPENMPT_VERSION"                = 'BuildLibopenmpt', '*', "$DependsPath\lib\pkgconfig\libopenmpt.pc"
-        "Libgme $LIBGME_VERSION"                        = 'BuildLibgme', '*', "$DependsPath\lib\pkgconfig\libgme.pc"
-        "Fdkaac $FDK_AAC_VERSION"                       = 'BuildFdkaac', '*', "$DependsPath\lib\pkgconfig\fdk-aac.pc"
-        "Faad2 $FAAD2_VERSION"                          = 'BuildFaad2', '*', "$DependsPath\lib\pkgconfig\faad2.pc"
-        "Faac $FAAC_VERSION"                            = 'BuildFaac', '*', "$DependsPath\lib\pkgconfig\faac.pc"
-        "Utfcpp $UTFCPP_VERSION"                        = 'BuildUtfcpp', '*', "$DependsPath\include\utf8cpp\utf8.h"
-        "Taglib $TAGLIB_VERSION"                        = 'BuildTaglib', '*', "$DependsPath\lib\pkgconfig\taglib.pc"
-        "Libbs2b $LIBBS2B_VERSION"                      = 'BuildLibbs2b', '*', "$DependsPath\lib\libbs2b.lib"
-        "Libebur128 $LIBEBUR128_VERSION"                = 'BuildLibebur128', '*', "$DependsPath\lib\pkgconfig\libebur128.pc"
-        "Ffmpeg $FFMPEG_VERSION"                        = 'BuildFfmpeg', '*', "$DependsPath\lib\avutil.lib"
-        "Chromaprint $CHROMAPRINT_VERSION"              = 'BuildChromaprint', '*', "$DependsPath\lib\pkgconfig\libchromaprint.pc"
-        "Gstreamer $GSTREAMER_VERSION"                  = 'BuildGstreamer', '*', "$DependsPath\lib\pkgconfig\gstreamer-1.0.pc"
-        "Gstpluginsbase $GSTREAMER_VERSION"             = 'BuildGstpluginsbase', '*', "$DependsPath\lib\pkgconfig\gstreamer-plugins-base-1.0.pc"
-        "Gstpluginsgood $GSTREAMER_VERSION"             = 'BuildGstpluginsgood', '*', "$DependsPath\lib\gstreamer-1.0\gstdirectsound.lib"
-        "Gstpluginsbad $GSTREAMER_VERSION"              = 'BuildGstpluginsbad', '*', "$DependsPath\lib\pkgconfig\gstreamer-plugins-bad-1.0.pc"
-        "Gstpluginsugly $GSTREAMER_VERSION"             = 'BuildGstpluginsugly', '*', "$DependsPath\lib\gstreamer-1.0\gstasf.lib"
-        "Gstlibav $GSTREAMER_VERSION"                   = 'BuildGstlibav', '*', "$DependsPath\lib\gstreamer-1.0\gstlibav.lib"
-        "Gstspotify $GSTREAMER_GST_PLUGINS_RS_VERSION"  = 'BuildGstspotify', 'x64', "$DependsPath\lib\gstreamer-1.0\gstspotify.dll"
-        "Abseil $ABSEIL_VERSION"                        = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc"
-        "Protobuf $PROTOBUF_VERSION"                    = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"
-        "Qtbase $QTBaseVer"                             = 'BuildQtbase', '*', "$DependsPath\bin\qt-configure-module.bat"
-        "Qttools $QTToolsVer"                           = 'BuildQttools', '*', "$DependsPath\lib\cmake\Qt6Linguist\Qt6LinguistConfig.cmake"
-        "Qtimageformats $QTToolsVer"                    = 'BuildQtimageformats', '*', "$DependsPath\plugins\imageformats\qwebp$DebugPostfix.dll"
-        "Qtgrpc $QTGrpcVer"                             = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"
-        "KDsingleapp $KDSINGLEAPPLICATION_VERSION"      = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
-        "Qtsparkle ($(GetRepoCommit qtsparkle))"        = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
-        "Sparsehash $SPARSEHASH_VERSION"                = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
+        "Harfbuzz $HARFBUZZ_VERSION"                   = 'BuildHarfbuzz', '*', "$DependsPath\lib\harfbuzz*.lib"
+        "Jasper $JASPER_VERSION"                       = 'BuildJasper', '*', "$DependsPath\lib\pkgconfig\jasper.pc"
+        "Tiff $TIFF_VERSION"                           = 'BuildTiff', '*', "$DependsPath\lib\pkgconfig\libtiff-4.pc"
+        "Libwebp $LIBWEBP_VERSION"                     = 'BuildLibWebp', '*', "$DependsPath\lib\pkgconfig\libwebp.pc"
+        "Libogg $LIBOGG_VERSION"                       = 'BuildLibogg', '*', "$DependsPath\lib\pkgconfig\ogg.pc"
+        "Libvorbis $LIBVORBIS_VERSION"                 = 'BuildLibvorbis', '*', "$DependsPath\lib\pkgconfig\vorbis.pc"
+        "Flac $FLAC_VERSION"                           = 'BuildFlac', '*', "$DependsPath\lib\pkgconfig\flac.pc"
+        "Wavpack $WAVPACK_VERSION"                     = 'BuildWavpack', '*', "$DependsPath\lib\pkgconfig\wavpack.pc"
+        "Opus $OPUS_VERSION"                           = 'BuildOpus', '*', "$DependsPath\lib\pkgconfig\opus.pc"
+        "Opusfile $OPUSFILE_VERSION"                   = 'BuildOpusfile', '*', "$DependsPath\bin\opusfile.dll"
+        "Speex $SPEEX_VERSION"                         = 'BuildSpeex', '*', "$DependsPath\lib\pkgconfig\speex.pc"
+        "Libmpg123 $MPG123_VERSION"                    = 'BuildLibmpg123', '*', "$DependsPath\lib\pkgconfig\libmpg123.pc"
+        "Mp3lame $LAME_VERSION"                        = 'BuildLame', '*', "$DependsPath\lib\pkgconfig\mp3lame.pc"
+        "Twolame $TWOLAME_VERSION"                     = 'BuildTwolame', '*', "$DependsPath\lib\libtwolame_dll.lib"
+        "Fftw3 $FFTW_VERSION"                          = 'BuildFftw3', '*', "$DependsPath\lib\pkgconfig\fftw3.pc"
+        "Musepack $MUSEPACK_VERSION"                   = 'BuildMusepack', '*', "$DependsPath\lib\pkgconfig\mpcdec.pc"
+        "Libopenmpt $LIBOPENMPT_VERSION"               = 'BuildLibopenmpt', '*', "$DependsPath\lib\pkgconfig\libopenmpt.pc"
+        "Libgme $LIBGME_VERSION"                       = 'BuildLibgme', '*', "$DependsPath\lib\pkgconfig\libgme.pc"
+        "Fdkaac $FDK_AAC_VERSION"                      = 'BuildFdkaac', '*', "$DependsPath\lib\pkgconfig\fdk-aac.pc"
+        "Faad2 $FAAD2_VERSION"                         = 'BuildFaad2', '*', "$DependsPath\lib\pkgconfig\faad2.pc"
+        "Faac $FAAC_VERSION"                           = 'BuildFaac', '*', "$DependsPath\lib\pkgconfig\faac.pc"
+        "Utfcpp $UTFCPP_VERSION"                       = 'BuildUtfcpp', '*', "$DependsPath\include\utf8cpp\utf8.h"
+        "Taglib $TAGLIB_VERSION"                       = 'BuildTaglib', '*', "$DependsPath\lib\pkgconfig\taglib.pc"
+        "Libbs2b $LIBBS2B_VERSION"                     = 'BuildLibbs2b', '*', "$DependsPath\lib\libbs2b.lib"
+        "Libebur128 $LIBEBUR128_VERSION"               = 'BuildLibebur128', '*', "$DependsPath\lib\pkgconfig\libebur128.pc"
+        "Ffmpeg $FFMPEG_VERSION"                       = 'BuildFfmpeg', '*', "$DependsPath\lib\avutil.lib"
+        "Chromaprint $CHROMAPRINT_VERSION"             = 'BuildChromaprint', '*', "$DependsPath\lib\pkgconfig\libchromaprint.pc"
+        "Gstreamer $GSTREAMER_VERSION"                 = 'BuildGstreamer', '*', "$DependsPath\lib\pkgconfig\gstreamer-1.0.pc"
+        "Gstpluginsbase $GSTREAMER_VERSION"            = 'BuildGstpluginsbase', '*', "$DependsPath\lib\pkgconfig\gstreamer-plugins-base-1.0.pc"
+        "Gstpluginsgood $GSTREAMER_VERSION"            = 'BuildGstpluginsgood', '*', "$DependsPath\lib\gstreamer-1.0\gstdirectsound.lib"
+        "Gstpluginsbad $GSTREAMER_VERSION"             = 'BuildGstpluginsbad', '*', "$DependsPath\lib\pkgconfig\gstreamer-plugins-bad-1.0.pc"
+        "Gstpluginsugly $GSTREAMER_VERSION"            = 'BuildGstpluginsugly', '*', "$DependsPath\lib\gstreamer-1.0\gstasf.lib"
+        "Gstlibav $GSTREAMER_VERSION"                  = 'BuildGstlibav', '*', "$DependsPath\lib\gstreamer-1.0\gstlibav.lib"
+        "Gstspotify $GSTREAMER_GST_PLUGINS_RS_VERSION" = 'BuildGstspotify', 'x64', "$DependsPath\lib\gstreamer-1.0\gstspotify.dll"
+        "Abseil $ABSEIL_VERSION"                       = 'BuildAbseil', '*', "$DependsPath\lib\pkgconfig\absl_any.pc"
+        "Protobuf $PROTOBUF_VERSION"                   = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"
+        "Qtbase $QTBaseVer"                            = 'BuildQtbase', '*', "$DependsPath\bin\qt-configure-module.bat"
+        "Qttools $QTToolsVer"                          = 'BuildQttools', '*', "$DependsPath\lib\cmake\Qt6Linguist\Qt6LinguistConfig.cmake"
+        "Qtimageformats $QTToolsVer"                   = 'BuildQtimageformats', '*', "$DependsPath\plugins\imageformats\qwebp$DebugPostfix.dll"
+        "Qtgrpc $QTGrpcVer"                            = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"
+        "KDsingleapp $KDSINGLEAPPLICATION_VERSION"     = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
+        "Qtsparkle ($(GetRepoCommit qtsparkle))"       = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
+        "Sparsehash $SPARSEHASH_VERSION"               = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
         # "Rapidjson ($(GetRepoCommit rapidjson))"        = 'BuildRapidjson', '*', "$DependsPath\lib\cmake\RapidJSON\RapidJSONConfig.cmake"
-        "Glew $GLEW_VERSION"                            = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
-        "Libprojectm $LIBPROJECTM_VERSION"              = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
+        "Glew $GLEW_VERSION"                           = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
+        "Libprojectm $LIBPROJECTM_VERSION"             = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
         # "Gettext $GETTEXT_VERSION"                      = 'BuildGettext', '*', "$DependsPath\bin\gettext.exe"
-        "Tinysvcmdns ($(GetRepoCommit tinysvcmdns))"    = 'BuildTinysvcmdns', '*', "$DependsPath\lib\pkgconfig\tinysvcmdns.pc"
-        "Pe-parse $PEPARSE_VERSION"                     = 'BuildPeParse', '*', "$DependsPath\lib\pe-parse.lib"
-        "Pe-util ($(GetRepoCommit pe-util))"            = 'BuildPeUtil', '*', "$DependsPath\bin\peldd.exe"
+        "Tinysvcmdns ($(GetRepoCommit tinysvcmdns))"   = 'BuildTinysvcmdns', '*', "$DependsPath\lib\pkgconfig\tinysvcmdns.pc"
+        "Pe-parse $PEPARSE_VERSION"                    = 'BuildPeParse', '*', "$DependsPath\lib\pe-parse.lib"
+        "Pe-util ($(GetRepoCommit pe-util))"           = 'BuildPeUtil', '*', "$DependsPath\bin\peldd.exe"
     }
 
     if (-not $NoStrawberry) {

@@ -7,15 +7,15 @@ using namespace System.Collections.Specialized
 [CmdletBinding()]
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [string]$MsvcCommit = '6733ad81449a19dbf0f5817771957442565ec9fa', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
-    [string]$MsvcDepsCommit = 'dc4d65e0a0250f7b56ffd3c5e215d6f390584376', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
-    [string]$MsvcDepsRelease = '23306767503', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
-    [string]$StrawberryCommit = 'c74d2bbb155e9845612a895a5ad5c23026933870', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
+    [string]$MsvcCommit = '7d565a99ebbbf2f8fbafa539d3e54adda098260d', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
+    [string]$MsvcDepsCommit = 'f3876923db3993933a36de71ba288f0a6b90a15c', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
+    [string]$MsvcDepsRelease = '24508996352', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
+    [string]$StrawberryCommit = '999407e4f41bb4895d159b289763befc613ee3d8', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
     [string]$CMakeVersion = '4.2.3',
     [string]$7ZipVersion = '2600',
     [string]$GitVersion = '2.53.0',
     [string]$MesonVersion = '1.10.1',
-    [string]$StrawberryPerlVersion = '5.40.2.1',
+    [string]$StrawberryPerlVersion = '5.42.2',
     [string]$PythonVersion = '3.14.3'
 )
 process {
