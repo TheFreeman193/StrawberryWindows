@@ -27,7 +27,9 @@ param(
     [switch]$NoBuild,
     [switch]$NoStrawberry,
     [switch]$FromScratch,
-    [switch]$NoFailFast
+    [switch]$NoFailFast,
+    [switch]$PreCleanup,
+    [switch]$PostCleanup
 )
 
 begin {
@@ -289,6 +291,7 @@ process {
 
     function BuildYasm {
         $LocalBuildPath = "$BuildPath\yasm"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\yasm" $LocalBuildPath -Recurse -Force
@@ -311,10 +314,13 @@ process {
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildPkgConf {
         $LocalBuildPath = "$BuildPath\pkgconf-pkgconf-$PKGCONF_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\pkgconf-$PKGCONF_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -334,10 +340,13 @@ process {
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Copy pkgconf -> pkg-config...'
         Copy-Item "$DependsPath\bin\pkgconf.exe" "$DependsPath\bin\pkg-config.exe" -Force
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildMimAlloc {
         $LocalBuildPath = "$BuildPath\mimalloc-$MIMALLOC_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\mimalloc-$MIMALLOC_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -370,10 +379,13 @@ process {
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Move-Item "$DependsPath\lib\mimalloc*.dll" "$DependsPath\bin\" -Force
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGetOpt {
         $LocalBuildPath = "$BuildPath\getopt-win"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\getopt-win" $LocalBuildPath -Recurse -Force
@@ -398,10 +410,13 @@ process {
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildZlib {
         $LocalBuildPath = "$BuildPath\zlib-$ZLIB_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\zlib-$ZLIB_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -444,10 +459,13 @@ process {
         if (-not (Test-Path "$DependsPath\lib\zlib$DebugPostfix.lib")) { Copy-Item "$DependsPath\lib\z$DebugPostfix.lib" "$DependsPath\lib\zlib$DebugPostfix.lib" -Force }
         # Write-Host -fo Cyan '    Remove static libraries...'
         # Remove-Item "$DependsPath\lib\zlibstatic*.lib" -Force
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildOpenSSL {
         $LocalBuildPath = "$BuildPath\openssl-$OPENSSL_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\openssl-$OPENSSL_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -456,7 +474,7 @@ process {
         Push-Location $LocalBuildPath
         Write-Host -fo Cyan '    Perl configure...'
         $ZLibInfix = if ($BuildArch -eq 'arm64') { '' } else { 'zlib' }
-        perl.exe Configure $PerlArch shared $ZLibInfix no-capieng no-tests --prefix="$DependsPath" `
+        perl.exe Configure $PerlArch shared $ZLibInfix no-tests --prefix="$DependsPath" `
             --libdir="lib" `
             --openssldir="$DependsPath\ssl" `
             --$BuildType `
@@ -508,9 +526,12 @@ Description: Secure Sockets Layer and cryptography libraries and tools
 Version: $OPENSSL_VERSION
 Requires: libssl libcrypto
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
     function BuildGmp {
         $LocalBuildPath = "$BuildPath\ShiftMediaProject\build"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             $null = New-Item -ItemType Directory $LocalBuildPath
         }
@@ -546,9 +567,12 @@ Version: $GMP_VERSION
 Libs: -L`${libdir} -lgmp${DebugPostfix}
 Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
     function BuildNettle {
         $LocalBuildPath = "$BuildPath\ShiftMediaProject\build"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             $null = New-Item -ItemType Directory $LocalBuildPath
         }
@@ -608,10 +632,12 @@ Libs: -L`${libdir} -lhogweed${DebugPostfix}
 Cflags: -I`${includedir}
 "@
         if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGnutls {
         $LocalBuildPath = "$BuildPath\ShiftMediaProject\build"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             $null = New-Item -ItemType Directory $LocalBuildPath
         }
@@ -676,9 +702,11 @@ Libs: -L`${libdir} -lgnutls
 Cflags: -I`${includedir}
 "@
         if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
     function BuildLibpng {
         $LocalBuildPath = "$BuildPath\libpng-$LIBPNG_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\libpng-$LIBPNG_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -708,13 +736,16 @@ Cflags: -I`${includedir}
             Write-Host -fo Cyan '    Copy libraries...'
             Copy-Item "$DependsPath\lib\libpng16$DebugPostfix.lib" "$DependsPath\lib\png16.lib" -Force
         }
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibjpeg {
-        $LocalBuildPath = "$BuildPath\libjpeg-turbo-$LIBJPEG_VERSION"
+        $LocalBuildPath = "$BuildPath\libjpeg-turbo-$LIBJPEG_TURBO_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
-            tar.exe -xf "$DownloadPath\libjpeg-turbo-$LIBJPEG_VERSION.tar.gz" -C $BuildPath | Out-Default
+            tar.exe -xf "$DownloadPath\libjpeg-turbo-$LIBJPEG_TURBO_VERSION.tar.gz" -C $BuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
         if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
@@ -735,10 +766,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildPcre2 {
         $LocalBuildPath = "$BuildPath\pcre2-$PCRE2_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\pcre2-$PCRE2_VERSION.tar.bz2" -C $BuildPath | Out-Default
@@ -764,10 +798,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildBzip2 {
         $LocalBuildPath = "$BuildPath\bzip2-$BZIP2_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\bzip2-$BZIP2_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -790,10 +827,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildXz {
         $LocalBuildPath = "$BuildPath\xz-$XZ_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\xz-$XZ_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -816,10 +856,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildBrotli {
         $LocalBuildPath = "$BuildPath\brotli-$BROTLI_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\brotli-$BROTLI_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -839,10 +882,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibiconv {
         $LocalBuildPath = "$BuildPath\libiconv-for-Windows"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\libiconv-for-Windows" $LocalBuildPath -Recurse -Force
@@ -863,12 +909,14 @@ Cflags: -I`${includedir}
         if ($ISDEBUG) {
             Write-Host -fo Cyan '    Duplicate debug library...'
             Copy-Item "$DependsPath\lib\libiconv$DebugPostfix.lib" "$DependsPath\lib\libiconv.lib" -Force
-            if (-not $?) { return }
         }
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildIcu4c {
         $LocalBuildPath = "$BuildPath\icu"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             if (Test-Path "$DownloadPath\icu4c-$ICU4C_VERSION-sources.zip") {
@@ -935,10 +983,13 @@ Version: $ICU4C_VERSION
 Libs: -licuio$DebugPostfix
 Requires: icu-i18n
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildPixman {
         $LocalBuildPath = "$BuildPath\pixman-$PIXMAN_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\pixman-$PIXMAN_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -959,10 +1010,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildExpat {
         $LocalBuildPath = "$BuildPath\expat-$EXPAT_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\expat-$EXPAT_VERSION.tar.bz2" -C $BuildPath | Out-Default
@@ -988,10 +1042,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildBoost {
         $LocalBuildPath = "$BuildPath\boost_$BOOST_VERSION_UNDERSCORE"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         $B2Arch = if ($BuildArch -like 'arm*' ) { 'arm' } else { 'x86' }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
@@ -1028,10 +1085,13 @@ Requires: icu-i18n
             threading=multi `
             install | Out-Default
         Pop-Location
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibxml2 {
         $LocalBuildPath = "$BuildPath\libxml2-v$LIBXML2_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\libxml2-v$LIBXML2_VERSION.tar.bz2" -C $BuildPath | Out-Default
@@ -1061,12 +1121,14 @@ Requires: icu-i18n
         if ($ISDEBUG) {
             Write-Host -fo Cyan '    Duplicate debug library...'
             Copy-Item "$DependsPath\lib\libxml2$DebugPostfix.lib" "$DependsPath\lib\libxml2.lib" -Force
-            if (-not $?) { return }
         }
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildNghttp2 {
         $LocalBuildPath = "$BuildPath\nghttp2-$NGHTTP2_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\nghttp2-$NGHTTP2_VERSION.tar.bz2" -C $BuildPath | Out-Default
@@ -1087,10 +1149,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibffi {
         $LocalBuildPath = "$BuildPath\libffi"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\libffi" $LocalBuildPath -Recurse -Force
@@ -1109,10 +1174,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibintl {
         $LocalBuildPath = "$BuildPath\proxy-libintl-${PROXY_LIBINTL_VERSION}"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\proxy-libintl-${PROXY_LIBINTL_VERSION}.tar.gz" -C $BuildPath | Out-Default
@@ -1131,10 +1199,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildDlfcn {
         $LocalBuildPath = "$BuildPath\dlfcn-win32-$DLFCN_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\dlfcn-win32-$DLFCN_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1154,10 +1225,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibpsl {
         $LocalBuildPath = "$BuildPath\libpsl-$LIBPSL_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\libpsl-$LIBPSL_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1178,10 +1252,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildOrc {
         $LocalBuildPath = "$BuildPath\orc-$ORC_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             7z.exe x -aos "$DownloadPath\orc-$ORC_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
@@ -1202,10 +1279,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibcurl {
         $LocalBuildPath = "$BuildPath\curl-$CURL_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\curl-$CURL_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1225,10 +1305,13 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildSqlite {
         $LocalBuildPath = "$BuildPath\sqlite-autoconf-$SQLITE_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\sqlite-autoconf-$SQLITE_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1264,10 +1347,13 @@ Libs: -L`${libdir} -lsqlite3
 Libs.private: -lz -ldl
 Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGlib {
         $LocalBuildPath = "$BuildPath\glib-$GLIB_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             7z.exe x -aos "$DownloadPath\glib-$GLIB_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
@@ -1296,11 +1382,14 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibproxy {
         # Doesn't compile with MSVC
         $LocalBuildPath = "$BuildPath\libproxy-$LIBPROXY_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\libproxy-$LIBPROXY_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1340,10 +1429,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Move binaries to bin...'
         Move-Item "$DependsPath\lib\libproxy.dll" "$DependsPath\bin\libproxy.dll" -Force
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibsoup {
         $LocalBuildPath = "$BuildPath\libsoup-$LIBSOUP_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             7z.exe x -aos "$DownloadPath\libsoup-$LIBSOUP_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
@@ -1374,18 +1466,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGlibNetworking {
-        # $LocalBuildPath = "$BuildPath\glib-networking-$GLIB_NETWORKING_VERSION"
-        # if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-        #     Write-Host -fo Cyan '    Extract source...'
-        #     7z.exe x -aos "$DownloadPath\glib-networking-$GLIB_NETWORKING_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
-        #     if ($LASTEXITCODE -ne 0) { return }
-        #     7z.exe x -aoa "$DownloadPath\glib-networking-$GLIB_NETWORKING_VERSION.tar" -o"$BuildPath" | Out-Default
-        #     if ($LASTEXITCODE -ne 0) { return }
-        # }
         $LocalBuildPath = "$BuildPath\glib-networking"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\glib-networking" $LocalBuildPath -Recurse -Force
@@ -1414,6 +1501,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildFreetype {
@@ -1421,6 +1510,7 @@ Cflags: -I`${includedir}
             [switch]$NoHarfbuzz
         )
         $LocalBuildPath = "$BuildPath\freetype-$FREETYPE_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\freetype-$FREETYPE_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1448,12 +1538,14 @@ Cflags: -I`${includedir}
         if ($ISDEBUG) {
             Write-Host -fo Cyan '    Duplicate debug library...'
             Copy-Item "$DependsPath\lib\freetype$DebugPostfix.lib" "$DependsPath\lib\freetype.lib" -Force
-            if (-not $?) { return }
         }
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildCairo {
         $LocalBuildPath = "$BuildPath\cairo-$CAIRO_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             7z.exe x -aos "$DownloadPath\cairo-$CAIRO_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
@@ -1490,10 +1582,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildHarfbuzz {
         $LocalBuildPath = "$BuildPath\harfbuzz-$HARFBUZZ_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             7z.exe x -aos "$DownloadPath\harfbuzz-$HARFBUZZ_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
@@ -1524,10 +1619,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibogg {
         $LocalBuildPath = "$BuildPath\libogg-$LIBOGG_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\libogg-$LIBOGG_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1549,10 +1647,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibvorbis {
         $LocalBuildPath = "$BuildPath\libvorbis-$LIBVORBIS_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\libvorbis-$LIBVORBIS_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1574,10 +1675,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildFlac {
         $LocalBuildPath = "$BuildPath\flac-$FLAC_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             7z.exe x -aos "$DownloadPath\flac-$FLAC_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
@@ -1604,10 +1708,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildWavpack {
         $LocalBuildPath = "$BuildPath\wavpack-$WAVPACK_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\wavpack-$WAVPACK_VERSION.tar.bz2" -C $BuildPath | Out-Default
@@ -1647,10 +1754,13 @@ Cflags: -I`${includedir}
             { Test-Path "$_\libwavpack-1.dll" } { Copy-Item "$_\libwavpack-1.dll" "$_\wavpack.dll" }
             default { Write-Error "Unable to find output binary in path '$_'!" }
         }
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildOpus {
         $LocalBuildPath = "$BuildPath\opus-$OPUS_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\opus-$OPUS_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1670,10 +1780,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildOpusfile {
         $LocalBuildPath = "$BuildPath\opusfile-$OPUSFILE_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\opusfile-$OPUSFILE_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1697,10 +1810,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildSpeex {
         $LocalBuildPath = "$BuildPath\speex-Speex-$SPEEX_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\speex-Speex-$SPEEX_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1730,12 +1846,14 @@ Cflags: -I`${includedir}
             if (-not $?) { return }
             Write-Host -fo Cyan '    Duplicate debug binary...'
             Copy-Item "$DependsPath\bin\libspeexd.dll" "$DependsPath\bin\libspeex.dll" -Force
-            if (-not $?) { return }
         }
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibmpg123 {
         $LocalBuildPath = "$BuildPath\mpg123-$MPG123_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\mpg123-$MPG123_VERSION.tar.bz2" -C $BuildPath | Out-Default
@@ -1758,10 +1876,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build_cmake" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLame {
         $LocalBuildPath = "$BuildPath\lame-$LAME_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\lame-$LAME_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1795,10 +1916,13 @@ Version: $LAME_VERSION
 Libs: -L`${libdir} -lmp3lame
 Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildTwolame {
         $LocalBuildPath = "$BuildPath\twolame-$TWOLAME_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\twolame-$TWOLAME_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1844,46 +1968,55 @@ Version: $TWOLAME_VERSION
 Libs: -L`${libdir} -ltwolame_dll
 Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildFftw3 {
-        $LocalBuildPath = "$BuildPath\fftw-$FFTW_VERSION"
+        $LocalBuildPath = "$BuildPath\fftw-$FFTW_SOURCE_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
-            7z.exe x -aoa "$DownloadPath\fftw-$FFTW_VERSION-$BuildArch-$BuildType.zip" -o"$LocalBuildPath" | Out-Default
+            # 7z.exe x -aoa "$DownloadPath\fftw-$FFTW_VERSION-$BuildArch-$BuildType.zip" -o"$LocalBuildPath" | Out-Default
+            # tar.exe -xf "$DownloadPath\fftw-x86_64-w64-mingw32-$BuildType-$FFTW_VERSION.tar.xz" -C $BuildPath | Out-Default
+            tar.exe -xf "$DownloadPath\fftw-${FFTW_SOURCE_VERSION}.tar.gz" -C $BuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
-        Write-Host -fo Cyan '    Generate library...'
-        lib.exe /MACHINE:"$BuildArch" /DEF:"$LocalBuildPath\libfftw3-3.def" /OUT:"$LocalBuildPath\libfftw3-3.lib" | Out-Default
+        Get-Content "$DownloadPath\fftw-fixes.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
+        if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
+            Write-Host -fo Cyan '    Create build directory...'
+            $null = New-Item "$LocalBuildPath\build" -ItemType Directory -Force
+            if (-not $?) { return }
+        }
+        Write-Host -fo Cyan '    CMake configure...'
+        if ($BuildArch -eq 'x86') { $UseAVX = 'OFF' } else { $UseAVX = 'ON' } # 32-bit version likely to run on older HW
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
+            -DBUILD_SHARED_LIBS=ON `
+            -DBUILD_TESTS=OFF `
+            -DENABLE_AVX="$UseAVX" `
+            -DENABLE_AVX2=OFF `
+            -DENABLE_SSE=ON `
+            -DENABLE_SSE2=ON `
+            -DENABLE_THREADS=ON `
+            -DWITH_COMBINED_THREADS=ON `
+            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy headers...'
-        Copy-Item "$LocalBuildPath\fftw3.h" "$DependsPath\include\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy libraries...'
-        Copy-Item "$LocalBuildPath\libfftw3-3.lib" "$DependsPath\lib\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy binaries...'
-        Copy-Item "$LocalBuildPath\libfftw3-3.dll" "$DependsPath\bin\" -Force
-        if (-not $?) { return }
-        if ($BuildAddressSize -eq '32') {
-            Copy-Item "$LocalBuildPath\libgcc_s_sjlj-1.dll", "$LocalBuildPath\libwinpthread-1.dll" "$DependsPath\bin\" -Force
+        Write-Host -fo Cyan '    CMake build...'
+        cmake.exe --build "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        Write-Host -fo Cyan '    CMake install...'
+        cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if (-not (Test-Path "$DependsPath\bin\fftw3.dll") -and (Test-Path "$DependsPath\bin\libfftw3-3.dll")) {
+            Copy-Item "$DependsPath\bin\libfftw3-3.dll" "$DependsPath\bin\fftw3.dll"
         }
         if (-not $?) { return }
-        Write-Host -fo Cyan '    Write pkgconfig...'
-        Set-Content -Path "$DependsPath\lib\pkgconfig\fftw3.pc" -Force -Value @"
-$PkgconfTemplate
-
-Name: fftw3
-Description: A C subroutine library for discrete Fourier transform (DFT)
-URL: https://www.fftw.org/
-Version: $FFTW_VERSION
-Libs: -L`${libdir} -lfftw3-3
-Cflags: -I`${includedir}
-"@
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildMusepack {
         $LocalBuildPath = "$BuildPath\musepack_src_r$MUSEPACK_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\musepack_src_r$MUSEPACK_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -1932,10 +2065,13 @@ Version: $MUSEPACK_VERSION
 Libs: -L`${libdir} -lmpcdec
 Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibopenmpt {
         $LocalBuildPath = "$BuildPath\libopenmpt-$LIBOPENMPT_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             7z.exe x -aoa "$DownloadPath\libopenmpt-${LIBOPENMPT_VERSION}+release.msvc.zip" -o"$LocalBuildPath" | Out-Default
@@ -1958,17 +2094,20 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build_cmake" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibgme {
         $LocalBuildPath = "$BuildPath\libgme-$LIBGME_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\libgme-$LIBGME_VERSION-src.tar.gz" -C $BuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
         Write-Host -fo Cyan '    Patch build configuration...'
-        Get-Content "$DownloadPath\libgme-pkgconf.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
+        # Get-Content "$DownloadPath\libgme-pkgconf.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         if ($Error.Count -gt 0 -or $LASTEXITCODE -gt 1) { return }
         if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
             Write-Host -fo Cyan '    Create build directory...'
@@ -1984,10 +2123,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildFdkaac {
         $LocalBuildPath = "$BuildPath\fdk-aac-$FDK_AAC_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\fdk-aac-$FDK_AAC_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2008,10 +2150,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildFaad2 {
         $LocalBuildPath = "$BuildPath\faad2-$FAAD2_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\faad2-$FAAD2_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2033,10 +2178,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildFaac {
         $LocalBuildPath = "$BuildPath\faac-faac-$FAAC_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract source...'
             tar.exe -xf "$DownloadPath\faac-$FAAC_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2059,10 +2207,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildUtfcpp {
         $LocalBuildPath = "$BuildPath\utfcpp-$UTFCPP_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\utfcpp-$UTFCPP_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2082,10 +2233,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildTaglib {
         $LocalBuildPath = "$BuildPath\taglib-$TAGLIB_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\taglib-$TAGLIB_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2105,10 +2259,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibbs2b {
         $LocalBuildPath = "$BuildPath\libbs2b-$LIBBS2B_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\libbs2b-$LIBBS2B_VERSION.tar.bz2" -C $BuildPath | Out-Default
@@ -2131,10 +2288,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibebur128 {
         $LocalBuildPath = "$BuildPath\libebur128-$LIBEBUR128_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\libebur128-$LIBEBUR128_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2158,10 +2318,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildFfmpeg {
         $LocalBuildPath = "$BuildPath\ffmpeg"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\ffmpeg" $LocalBuildPath -Recurse -Force
@@ -2187,10 +2350,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildChromaprint {
         $LocalBuildPath = "$BuildPath\chromaprint-$CHROMAPRINT_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\chromaprint-$CHROMAPRINT_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2212,6 +2378,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGstreamer {
@@ -2232,8 +2400,9 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
-        Write-Host -fo Cyan '    Patch build configuration...'
-        Get-Content "$DownloadPath\gstreamer-macros-restrict.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
+        # Write-Host -fo Cyan '    Patch build configuration...'
+        # Get-Content "$DownloadPath\gstreamer-macros-restrict.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
@@ -2259,6 +2428,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGstpluginsbase {
@@ -2279,6 +2450,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared --prefix="$DependsPath" --pkg-config-path="$DependsPath\lib\pkgconfig" `
@@ -2319,6 +2491,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGstpluginsgood {
@@ -2339,6 +2513,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared --prefix="$DependsPath" --pkg-config-path="$DependsPath\lib\pkgconfig" `
@@ -2388,6 +2563,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGstpluginsbad {
@@ -2408,6 +2585,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared --prefix="$DependsPathForward" --pkg-config-path="$DependsPath\lib\pkgconfig" `
@@ -2458,6 +2636,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGstpluginsugly {
@@ -2478,6 +2658,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
@@ -2500,6 +2681,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGstlibav {
@@ -2520,6 +2703,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
@@ -2537,10 +2721,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGstspotify {
         $LocalBuildPath = "$BuildPath\gst-plugins-rs"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\gst-plugins-rs" $LocalBuildPath -Recurse -Force
@@ -2573,10 +2760,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildAbseil {
         $LocalBuildPath = "$BuildPath\abseil-cpp-$ABSEIL_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\abseil-cpp-$ABSEIL_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2602,10 +2792,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildProtobuf {
         $LocalBuildPath = "$BuildPath\protobuf-$PROTOBUF_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\protobuf-$PROTOBUF_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2635,6 +2828,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Copy pkgconfig...'
         Copy-Item "$LocalBuildPath\build\protobuf.pc" "$DependsPath\lib\pkgconfig\"
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildQtbase {
@@ -2656,9 +2851,11 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         Write-Host -fo Cyan '    Patch build configuration...'
         if ($BuildArch -eq 'x86') { $QWinRing = 'OFF' } else { $QWinRing = 'ON' }
         Get-Content "$DownloadPath\qtbase-qwindowswindow.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
+        Get-Content "$DownloadPath\qtbase-openssl4.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         # Get-Content "$DownloadPath\qtbase-networkcache.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         Write-Host -fo Cyan '    CMake configure...'
         cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G Ninja `
@@ -2712,6 +2909,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildQttools {
@@ -2733,6 +2932,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
             $null = New-Item -ItemType Directory "$LocalBuildPath\build"
             Write-Host -fo Cyan '    QTTools configure...'
@@ -2746,6 +2946,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildQtimageformats {
@@ -2767,6 +2969,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         Write-Host -fo Cyan '    CMake configure...'
         cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
@@ -2781,6 +2984,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildQtgrpc {
@@ -2802,6 +3007,7 @@ Cflags: -I`${includedir}
                 if ($LASTEXITCODE -ne 0) { return }
             }
         }
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         Write-Host -fo Cyan '    CMake configure...'
         cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DBUILD_SHARED_LIBS=ON `
@@ -2815,10 +3021,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildQtsparkle {
         $LocalBuildPath = "$BuildPath\qtsparkle"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\qtsparkle" $LocalBuildPath -Recurse -Force
@@ -2833,10 +3042,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildSparsehash {
         $LocalBuildPath = "$BuildPath\sparsehash-sparsehash-$SPARSEHASH_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\sparsehash-$SPARSEHASH_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2871,10 +3083,13 @@ URL: https://github.com/sparsehash/sparsehash
 Version: $SPARSEHASH_VERSION
 Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildRapidjson {
         $LocalBuildPath = "$BuildPath\rapidjson"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\rapidjson" $LocalBuildPath -Recurse -Force
@@ -2894,10 +3109,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildKdsingleapp {
         $LocalBuildPath = "$BuildPath\kdsingleapplication-$KDSINGLEAPPLICATION_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\kdsingleapplication-$KDSINGLEAPPLICATION_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2918,10 +3136,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGlew {
         $LocalBuildPath = "$BuildPath\glew-$GLEW_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\glew-$GLEW_VERSION.tgz" -C $BuildPath | Out-Default
@@ -2948,10 +3169,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibprojectm {
         $LocalBuildPath = "$BuildPath\libprojectm-$LIBPROJECTM_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\libprojectm-$LIBPROJECTM_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -2971,10 +3195,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildGettext {
         $LocalBuildPath = "$BuildPath\gettext${GETTEXT_VERSION}-iconv${ICONV_VERSION}"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path "$BuildPath\gettext${GETTEXT_VERSION}-iconv*" -PathType Container)) {
             $SourceZip = Get-Item "$DownloadPath\gettext${GETTEXT_VERSION}-iconv${ICONV_VERSION}-static-$BuildAddressSize.zip"
             Write-Host -fo Cyan '    Extract archive...'
@@ -2983,10 +3210,13 @@ Cflags: -I`${includedir}
         }
         Write-Host -fo Cyan '    Copy binaries...'
         Copy-Item "$LocalBuildPath\bin\*.exe" "$DependsPath\bin\"
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildTinysvcmdns {
         $LocalBuildPath = "$BuildPath\tinysvcmdns"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\tinysvcmdns" $LocalBuildPath -Recurse -Force
@@ -3027,10 +3257,13 @@ Version: $(GetRepoCommit tinysvcmdns)
 Libs: -L`${libdir} -ltinysvcmdns
 Cflags: -I`${includedir}
 "@
+        if (-not $?) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildPeParse {
         $LocalBuildPath = "$BuildPath\pe-parse-${PEPARSE_VERSION}"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\pe-parse-${PEPARSE_VERSION}.tar.gz" -C $BuildPath | Out-Default
@@ -3052,10 +3285,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildPeUtil {
         $LocalBuildPath = "$BuildPath\pe-util"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\pe-util" $LocalBuildPath -Recurse -Force
@@ -3077,11 +3313,14 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildJasper {
         $LocalBuildPath = "$BuildPath\jasper-$JASPER_VERSION-build"
         $LocalSourcePath = "$BuildPath\jasper-$JASPER_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath, $LocalSourcePath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalSourcePath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\jasper-$JASPER_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -3114,10 +3353,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install $LocalBuildPath | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath, $LocalSourcePath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildTiff {
         $LocalBuildPath = "$BuildPath\tiff-$TIFF_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\tiff-${TIFF_VERSION}.tar.gz" -C $BuildPath | Out-Default
@@ -3142,10 +3384,13 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function BuildLibWebp {
         $LocalBuildPath = "$BuildPath\libwebp-$LIBWEBP_VERSION"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Extract archive...'
             tar.exe -xf "$DownloadPath\libwebp-$LIBWEBP_VERSION.tar.gz" -C $BuildPath | Out-Default
@@ -3169,6 +3414,8 @@ Cflags: -I`${includedir}
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
+        if ($LASTEXITCODE -ne 0) { return }
+        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
     function Get-DependenciesFromNsi {
@@ -3292,6 +3539,7 @@ Cflags: -I`${includedir}
 
     function BuildStrawberry {
         $LocalBuildPath = "$BuildPath\_strawberry"
+        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
         if (-not (Test-Path $LocalBuildPath -PathType Container)) {
             Write-Host -fo Cyan '    Copy source repo...'
             Copy-Item "$DownloadPath\strawberry" $LocalBuildPath -Recurse -Force
@@ -3341,6 +3589,12 @@ Cflags: -I`${includedir}
         Write-Host -fo Cyan '    Copy MSVC redistributable...'
         Copy-Item "$DownloadPath\vc_redist.$BuildArch.exe" "$LocalBuildPath\build\" -Force
         if (-not $?) { return }
+        Write-Host -fo Cyan '    Patch NSIS target libfftw3-3.dll -> fftw3.dll, MinGW -> MSVC...'
+        (Get-Content "$LocalBuildPath\build\strawberry.nsi" -Raw) -ireplace 'libfftw3-3\.dll', 'fftw3.dll' -ireplace
+            '(!define (?:compiler )?["'']?)mingw', '$1msvc' -ireplace
+            '\s*(?:File ["'']|Delete ["'']\$INSTDIR\\)libgcc_s_sjlj-1\.dll["'']' -ireplace
+            '\s*(?:File ["'']|Delete ["'']\$INSTDIR\\)libwinpthread-1\.dll["'']' |
+            Set-Content "$LocalBuildPath\build\strawberry.nsi" -NoNewline
         Write-Host -fo Cyan '    Copy dependency binaries...'
         [list[string]]$FileList = Get-DependenciesFromNsi -NSIFile "$LocalBuildPath\build\strawberry.nsi"
         if (-not $? -or $FileList.Count -eq 0) { return }
@@ -3443,7 +3697,7 @@ Cflags: -I`${includedir}
         # "Nettle $NETTLE_VERSION"                        = 'BuildNettle', '*', "$DependsPath\lib\pkgconfig\nettle.pc"
         "GnuTLS $GNUTLS_VERSION"                       = 'BuildGnutls', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\gnutls.pc"
         "libpng $LIBPNG_VERSION"                       = 'BuildLibpng', '*', "$DependsPath\lib\pkgconfig\libpng.pc"
-        "libjpeg $LIBJPEG_VERSION"                     = 'BuildLibjpeg', '*', "$DependsPath\lib\pkgconfig\libjpeg.pc"
+        "libjpeg $LIBJPEG_TURBO_VERSION"               = 'BuildLibjpeg', '*', "$DependsPath\lib\pkgconfig\libjpeg.pc"
         "PCRE2 $PCRE2_VERSION"                         = 'BuildPcre2', '*', "$DependsPath\lib\pkgconfig\libpcre2-16.pc"
         "bzip2 $BZIP2_VERSION"                         = 'BuildBzip2', '*', "$DependsPath\lib\pkgconfig\bzip2.pc"
         "xz $XZ_VERSION"                               = 'BuildXz', '*', "$DependsPath\lib\pkgconfig\liblzma.pc"

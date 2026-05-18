@@ -77,6 +77,7 @@ begin {
 7z2600-x64.exe                         = 6fe18d5b3080e39678cabfa6cef12cfb25086377389b803a36a3c43236a8a82c
 abseil-cpp-20260107.0.tar.gz           = 4c124408da902be896a2f368042729655709db5e3004ec99f57e3e14439bc1b2
 boost_1_90_0.tar.gz                    = 5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9
+boost_1_91_0.tar.gz                    = 5734305f40a76c30f951c9abd409a45a2a19fb546efe4162119250bbe4d3a463
 brotli-1.2.0.tar.gz                    = 816c96e8e8f193b40151dad7e8ff37b1221d019dbcb9c35cd3fadbfe6477dfec
 bzip2-1.0.8.tar.gz                     = ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
 cairo-1.18.0.tar.xz                    = 243a0736b978a33dee29f9cca7521733b78a65b5418206fef7bd1c3d4cf10b64
@@ -87,6 +88,8 @@ curl-8.11.0.tar.gz                     = 264537d90e58d2b09dddc50944baf3c38e70891
 dlfcn-win32-1.4.2.tar.gz               = f61a874bc9163ab488accb364fd681d109870c86e8071f4710cbcdcbaf9f2565
 expat-2.7.4.tar.bz2                    = e6af11b01e32e5ef64906a5cca8809eabc4beb7ff2f9a0e6aabbd42e825135d0
 expat-2.7.5.tar.bz2                    = 386a423d40580f1e392e8b512b7635cac5083fe0631961e74e036b0a7a830d77
+expat-2.8.0.tar.bz2                    = 586494499ac3ad46d87f3beda7b1f770c1c8026a9b60e151593f8b29089a52ca
+expat-2.8.1.tar.bz2                    = f5833dd2e1cd7739ec9182804a1a29c4f0cc7c2f26b633d3a2188b7766a88ecb
 faac-1.31.1.tar.gz                     = 3191bf1b131f1213221ed86f65c2dfabf22d41f6b3771e7e65b6d29478433527
 faac-1.40.tar.gz                       = 3ef4cc1fa6a750003602adc6eea892ca3815becd9145797b787f0999e8b2b89c
 faac-1.50.tar.gz                       = e6876cba00cbd786a7f984d9aaada4d5bcb08d2582100366c70f6164d5c89214
@@ -96,6 +99,7 @@ fftw-3.3.10-x64-debug.zip              = 05fc35930da3b375733685e50ec40c1cfc4c188
 fftw-3.3.10-x64-release.zip            = d8af9c26d0fcb0f81c0b8ea848c411969788114650a43ec07f47b350cedaed5f
 fftw-3.3.10-x86-debug.zip              = cacfc427049637c52c84f8b1da92dc98ac8a6e2b7f269d3fcd508ff51227e4d8
 fftw-3.3.10-x86-release.zip            = a5f1f5c3493c33737c118eb8e6ee21d03d27cc3dee4a4ead59d070aa4cefd04b
+fftw-3.3.11.tar.gz                     = 5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1
 flac-1.5.0.tar.xz                      = f2c1c76592a82ffff8413ba3c4a1299b6c7ab06c734dee03fd88630485c2b920
 freetype-2.14.1.tar.gz                 = 174d9e53402e1bf9ec7277e22ec199ba3e55a6be2c0740cb18c0ee9850fc8c34
 freetype-2.14.2.tar.gz                 = 752c2671f85c54a84b7f0dd2b5cd26b6b741117033886ffbc5ac89a68464b848
@@ -104,38 +108,48 @@ Git-2.50.1-64-bit.exe                  = 47fe1d46dbb7111f6693b04a8bd95fc869ce206
 glew-2.3.1.tgz                         = b64790f94b926acd7e8f84c5d6000a86cb43967bd1e688b03089079799c9e889
 glib-2.87.2.tar.xz                     = d6eb74a4f4ffc0b56df79ae3a939463b1d92c623f6c167d51aab24e303a851f3
 glib-2.88.0.tar.xz                     = 3546251ccbb3744d4bc4eb48354540e1f6200846572bab68e3a2b7b2b64dfd07
+glib-2.88.1.tar.xz                     = 51ab804c56f6eab3e5045c774d1290ac5e4c923d4f9a3d8e33123bee45c1840e
 glib-networking-2.80.1.tar.xz          = b80e2874157cd55071f1b6710fa0b911d5ac5de106a9ee2a4c9c7bee61782f8e
 gst-libav-1.28.0.tar.xz                = e3c93db7da2da3b2374ccc2e7394316f9192460abdea81651652791d46ccb8fb
 gst-libav-1.28.1.tar.xz                = bfa91aaca38d0fd8addcdd559e35b7541e3f32a5f410194ec4ba18040defee9b
 gst-libav-1.28.2.tar.xz                = 45ba65535870aa7c026119d2e90b35dc760e1cf6f50bffbfe8d71223a3043a4e
+gst-libav-1.28.3.tar.xz                = 28fcd45d9ace261d4bda896466d5326af6efd2fcf0a20f24502094b5a9955bdf
 gst-plugins-bad-1.28.0.tar.xz          = 32d825041e5775fc9bf9e8c38e3a5c46c1441eee67f8112572450a9c23c835f0
 gst-plugins-bad-1.28.1.tar.xz          = 56c1593787f8b5550893d59e4ff29e6bcccf34973316fa55e34ce493e04313a2
 gst-plugins-bad-1.28.2.tar.xz          = 6467e3964828f4d7d08bfe1fbb4d76287a1c8fa76674e59e101a149c020fefd7
+gst-plugins-bad-1.28.3.tar.xz          = 4213f43ddb875bb141e5040e97735579d74665bec3d17b51052aade395b83f00
 gst-plugins-base-1.28.0.tar.xz         = eace79d63bd2edeb2048777ea9f432d8b6e7336e656cbc20da450f6235758b31
 gst-plugins-base-1.28.1.tar.xz         = 1446a4c2a92ff5d78d88e85a599f0038441d53333236f0c72d72f21a9c132497
 gst-plugins-base-1.28.2.tar.xz         = 4db76b3619280037a4047de7d9dbb38613a4272dcc40efb333257124635a888d
+gst-plugins-base-1.28.3.tar.xz         = 27880f3d87efa3bb5aa5f99f7ef6e4be7c95229f44eee928c1633d32e87d0099
 gst-plugins-good-1.28.0.tar.xz         = d97700f346fdf9ef5461c035e23ed1ce916ca7a31d6ddad987f774774361db77
 gst-plugins-good-1.28.1.tar.xz         = 738e26aee41b7a62050e40b81adc017a110a7f32d1ec49fa6a0300846c44368d
 gst-plugins-good-1.28.2.tar.xz         = 1ace2d8ec74f632d82eab5006753a27fe0c2402db4ca94d63271e494b62f50bf
+gst-plugins-good-1.28.3.tar.xz         = 47f78f500cbd900f758f9ba74288fda0e2ca5a7855096025641e121ffec40a5d
 gst-plugins-ugly-1.28.0.tar.xz         = 743f28b93c941e0af385ab193a2150f9f79bc6269adc639f6475d984794c217c
 gst-plugins-ugly-1.28.1.tar.xz         = 4082f3cb063fccc3ffc04e5ab0854bafde82d1b373eb3c9eaa28115dd3f95a78
 gst-plugins-ugly-1.28.2.tar.xz         = fe39a5ee7115e37de9eb65d899ec84c93e6e26ed3ffe25c6d5176cececbab572
+gst-plugins-ugly-1.28.3.tar.xz         = 0c04763200467b9b61a916b33646a6916a97cc9869d8b6dca57427b1f2734dee
 gstreamer-1.28.0.tar.xz                = 6c8676bc39a2b41084fd4b21d2c37985c69ac979c03ce59575db945a3a623afd
 gstreamer-1.28.1.tar.xz                = b65e2ffa35bdbf8798cb75c23ffc3d05e484e48346ff7546844ba85217664504
 gstreamer-1.28.2.tar.xz                = ce5cd44d4ffeafdcc3dddaa072b2179c0b7cb1abf4e6c5d18d4375f8a39fe491
+gstreamer-1.28.3.tar.xz                = 5e84ecb942e136944eb9812f19cff7bcf05a85637482a32da55b892914c397d1
 harfbuzz-12.3.2.tar.xz                 = 6f6db164359a2da5a84ef826615b448b33e6306067ad829d85d5b0bf936f1bb8
 harfbuzz-13.2.1.tar.xz                 = 6695da3eb7e1be0aa3092fe4d81433a33b47f4519259c759d729e3a9a55c1429
 harfbuzz-14.1.0.tar.xz                 = ee0eb3a1da2c5a28147f12dff55f6c7d60aeeeb29ac7ef334eabe84c8476c105
+harfbuzz-14.2.0.tar.xz                 = 94017020f96d025bb66ae91574e4cf334bcad23e8175a8a40565b3721bc2eaff
 icu4c-78.2-sources.zip                 = af38c3d4904e47e1bc2dd7587922ee2aec312fefa677804582e3fecca3edb272
 icu4c-78.3-sources.zip                 = 20b295e2c23c541aec17f35c546e4d3136b7ab7d58e3a5fc4e479958a69b1a2c
 InetC.zip                              = b01077e56ebb19c005b45d40f837958ca6a92f51a5a937dc1bb497c7c7f2aa93
 jasper-4.2.8.tar.gz                    = 98058a94fbff57ec6e31dcaec37290589de0ba6f47c966f92654681a56c71fae
 jasper-4.2.9.tar.gz                    = f71cf643937a5fcaedcfeb30a22ba406912948ad4413148214df280afc425454
 kdsingleapplication-1.2.0.tar.gz       = ff4ae6a4620beed1cdb3e6a9b78a17d7d1dae7139c3d4746d4856b7547d42c38
+kdsingleapplication-1.2.1.tar.gz       = e3254ce9dc5ecf6d61ef83264bc61d486a307f0e3c9ed1bb2176f068cdbcbe09
 lame-3.100.tar.gz                      = ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e
 libbs2b-3.1.0.tar.bz2                  = 4799974becdeeedf0db00115bc63f60ea3fe4b25f1dfdb6903505839a720e46f
 libebur128-1.2.6.tar.gz                = baa7fc293a3d4651e244d8022ad03ab797ca3c2ad8442c43199afe8059faa613
 libgme-0.6.4-src.tar.gz                = 6f94eac735d86bca998a7ce1170d007995191ef6d4388345a0dc5ffa1de0bafa
+libgme-0.6.5-src.tar.gz                = a133f19278222136ba0d8c27b64a07987ba05fec9d2e6d293ccd8cabdd97ddbb
 libgnutls_3.8.8_msvc17.zip             = 73abaa5d049e106c2a613d752df228f16588eead3a4e4fd47aa9135f67e562b0
 libjpeg-turbo-3.1.3.tar.gz             = 075920b826834ac4ddf97661cc73491047855859affd671d52079c6867c1c6c0
 libjpeg-turbo-3.1.4.1.tar.gz           = ecae8008e2cc9ade2f2c1bb9d5e6d4fb73e7c433866a056bd82980741571a022
@@ -158,14 +172,18 @@ libxml2-v2.15.3.tar.bz2                = 635685ed77c202daf4d20e1427f70ba75c15b8e
 LockedList.3.1.0.0.zip                 = 2ad420f6481248b5de71ccde8dd2b6d1f51534ba7abc30c1d477d5cca8a5fc30
 mimalloc-2.1.2.tar.gz                  = 2b1bff6f717f9725c70bf8d79e4786da13de8a270059e4ba0bdd262ae7be46eb
 mpg123-1.33.4.tar.bz2                  = 3ae8c9ff80a97bfc0e22e89fbcd74687eca4fc1db315b12607f27f01cb5a47d9
+mpg123-1.33.5.tar.bz2                  = 0d7ebc8da0aff3ca383c8c6b5a6adbe402ee5bb256685b8c5499f3a739f9d6dd
 musepack_src_r475.tar.gz               = a4b1742f997f83e1056142d556a8c20845ba764b70365ff9ccf2e3f81c427b2b
 nasm-3.01-installer-x64.exe            = 7881e9febc8b6558581041019b7890f109bef0694d93ed82c9589794c7b5a600
 nghttp2-1.68.0.tar.bz2                 = 8d80cb4e45adca546a2005b86251ba5a7b63f5ea322228ae28e9969743f99707
 nghttp2-1.68.1.tar.bz2                 = b761b53cb64916657ea84437973d508fd675e96bb2feb9593a1e43d1959abe95
+nghttp2-1.69.0.tar.bz2                 = 3f185f5b1c3e77885eb9cf3f2c4da4b1a9f73a24bf5957b829183ad137f82dc8
 nsis-3.10-setup.exe                    = 4313d352e0dafd1f22b6517126a655cae3b444fa758d2845eddfbe72f24f7bdd
 openssl-3.6.1.tar.gz                   = b1bfedcd5b289ff22aee87c9d600f515767ebf45f77168cb6d64f231f518a82e
 openssl-3.6.2.tar.gz                   = aaf51a1fe064384f811daeaeb4ec4dce7340ec8bd893027eee676af31e83a04f
+openssl-4.0.0.tar.gz                   = c32cf49a959c4f345f9606982dd36e7d28f7c58b19c2e25d75624d2b3d2f79ac
 opus-1.5.2.tar.gz                      = 65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1
+opus-1.6.1.tar.gz                      = 6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1
 opusfile-0.12.tar.gz                   = 118d8601c12dd6a44f52423e68ca9083cc9f2bfe72da7a8c1acb22a80ae3550b
 orc-0.4.41.tar.xz                      = cb1bfd4f655289cd39bc04642d597be9de5427623f0861c1fc19c08d98467fa2
 orc-0.4.42.tar.xz                      = 7ec912ab59af3cc97874c456a56a8ae1eec520c385ec447e8a102b2bd122c90c
@@ -179,27 +197,34 @@ proxy-libintl-0.5.tar.gz               = f7a1cbd7579baaf575c66f9d99fb6295e9b0684
 python-3.13.3-amd64.exe                = 698f2df46e1a3dd92f393458eea77bd94ef5ff21f0d5bf5cf676f3d28a9b4b6c
 qtbase-everywhere-src-6.10.2.tar.xz    = aeb78d29291a2b5fd53cb55950f8f5065b4978c25fb1d77f627d695ab9adf21e
 qtbase-everywhere-src-6.11.0.tar.xz    = 231ad85979864d914dc9568a1b71c91d6cf20d7b2021d059103bf0eb51cb755e
+qtbase-everywhere-src-6.11.1.tar.xz    = d9594a31228aa23ad6b531719a29b45f0f3989fe6c136d45767ea179f233c1ac
 qtgrpc-everywhere-src-6.10.2.tar.xz    = 7386bfc9c10c7920e5ff22dcf067e95f379bb379e4d916269f4465ab295ed136
 qtgrpc-everywhere-src-6.11.0.tar.xz    = 9dedcb51836cd0e8703764f0c89ef5a7da414e0c9a0d67d0d8d6ab17bb94a879
+qtgrpc-everywhere-src-6.11.1.tar.xz    = 437b04f0c550ccdb1739ca5f9119b73dfa0376564815e8bfc199890643e2a250
 qtimageformats-everywhere-src-6.10.2.tar.xz = 8b8f9c718638081e7b3c000e7f31910140b1202a98e98df5d1b496fe6f639d67
 qtimageformats-everywhere-src-6.11.0.tar.xz = d3adb02ac5e2fe24068dbdaee0d7cc68cc3fa8553291c1bfce77c9fe8e940cc8
+qtimageformats-everywhere-src-6.11.1.tar.xz = b2bf6c6845ac175ed7f819145483ba4676f617aaa6a5012c8efee63c8bbac413
 qttools-everywhere-src-6.10.2.tar.xz   = 1e3d2c07c1fd76d2425c6eaeeaa62ffaff5f79210c4e1a5bc2a6a9db668d5b24
 qttools-everywhere-src-6.11.0.tar.xz   = cfb1993d7a10848965b01b9cf33a54b8a4ba4e5e3a6d28d59483e73f10d9fc76
+qttools-everywhere-src-6.11.1.tar.xz   = 8e61835a679c93fa9c6065b142353c2071ba68e297898937c32a03777fcaf50d
 Registry.zip                           = 791451f1be34ea1ed6f2ad6d205cf8e54bb0562af11b0160a6bfa5f499624094
-rustup-init.exe                        = 88d8258dcf6ae4f7a80c7d1088e1f36fa7025a1cfd1343731b4ee6f385121fc0
+rustup-init.exe                        = 86478e53f769379d7f0ebfa7c9aa97cb76ca92233f79aa2cc0dbee2efaac73c7
 sed.exe                                = 4aa7a40b3a0e38e1c56f066d722f8a0c0dd99e6e2842a5d0c57c4f336d80589d
 sparsehash-2.0.4.tar.gz                = 8cd1a95827dfd8270927894eb77f62b4087735cbede953884647f16c521c7e58
 speex-Speex-1.2.1.tar.gz               = beaf2642e81a822eaade4d9ebf92e1678f301abfc74a29159c4e721ee70fdce0
 sqlite-autoconf-3510200.tar.gz         = fbd89f866b1403bb66a143065440089dd76100f2238314d92274a082d4f2b7bb
 sqlite-autoconf-3510300.tar.gz         = 81f5be397049b0cae1b167f2225af7646fc0f82e4a9b3c48c9ea3a533e21d77a
 sqlite-autoconf-3530000.tar.gz         = 851e9b38192fe2ceaa65e0baa665e7fa06230c3d9bd1a6a9662d02380d73365a
+sqlite-autoconf-3530100.tar.gz         = 83e6b2020a034e9a7ad4a72feea59e1ad52f162e09cbd26735a3ffb98359fc4f
 strawberry-perl-5.40.2.1-64bit.msi     = fdb810474472a769d6a1327a36d0f0a4843d5b1eac3a503428d4d86a1836e222
 strawberry-perl-5.42.2.1-64bit.msi     = 1b473a709e4d69128f52b30426a423f44d181cefc6460e88b4f519f534cc6583
 taglib-2.1.1.tar.gz                    = 3716d31f7c83cbf17b67c8cf44dd82b2a2f17e6780472287a16823e70305ddba
 taglib-2.2.1.tar.gz                    = 7e76b5299dcef427c486bffe455098470c8da91cf3ccb9ea804893df57389b5e
+taglib-2.3.tar.gz                      = 7349f6fd942418bc7009ebe743eb7c9d055f02921ec56fa436ec25007c47fd38
 tiff-4.7.1.tar.gz                      = f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69
 twolame-0.4.0.tar.gz                   = cc35424f6019a88c6f52570b63e1baf50f62963a3eac52a03a800bb070d7c87d
 utfcpp-4.0.9.tar.gz                    = 397a9a2a6ed5238f854f490b0177b840abc6b62571ec3e07baa0bb94d3f14d5a
+utfcpp-4.1.0.tar.gz                    = 9a45cbeefacf512879971eaf57fe52133b73a0152d5354f3adeaf8d103cff0f3
 VSYASM.zip                             = ec99229ba3ea6f0a0db3c15647266588db3c605301ff3b78bbf427d6657277d5
 wavpack-5.9.0.tar.bz2                  = b0038f515d322042aaa6bd352d437729c6f5f904363cc85bbc9b0d8bd4a81927
 win_flex_bison-2.5.25.zip              = 8d324b62be33604b2c45ad1dd34ab93d722534448f55a16ca7292de32b6ac135
@@ -209,22 +234,21 @@ zlib-1.3.1.tar.gz                      = 9a93b2b7dfdac77ceba5a558a580e74667dd6fe
 zlib-1.3.2.tar.gz                      = bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16
 bzip2-cmake.patch                      = c6089dcebc75789dd84c2edd6b36fe9cb40fbfcf9c4fd35d1a61204b00e3da8c
 faac-msvc.patch                        = 96f53f6411ac621768669d7eb3cd8d94767be4eba4d1b6f209f20f6fb919e9a5
-fftw-fixes.patch                       = 4ebdcd7ce363759cc108ec3674da6ae39f7e542f0b14e5f4f329edb8a6877810
+fftw-fixes.patch                       = 895a8c8bf1521eb5ae936e4ab4eba36a167b89fcc95e7cef41f228bdb40740aa
 glib-networking.patch                  = c04f72212986d79d19fe6541cb91cec82e6d8b008663f8de9749f432a1b9b449
-gstreamer-macros-restrict.patch        = f58563026d966ac26001603dcaff4fe2af69de35000288a41a1cf7ca59b524b7
 libbs2b-msvc.patch                     = 9feb9cc77217d4e9db3690fa3baeec33c4032d5a62a313967f8913d046daca93
-libgme-pkgconf.patch                   = 4b5617e0cf302f5ee3b6df88fceba38b2be9a7a42f256c117522dc9f5f896363
 libopenmpt-cmake.patch                 = 0b56721a294ab27868246cab7149817edc6a5d82499ff16a9f198bc53a4654eb
 libpng-pkgconf.patch                   = 1aeb0c95f012d226ccfa5bb1d621540f9ec113f53ff8d03dd5b5366c9568d645
-musepack-fixes.patch                   = 35d789ee87ea41731495698cf13b7525087c335a158e09a075f8158709fe8735
+musepack-fixes.patch                   = 738c80b33195facffcc3cb201da3302010c1b2989a36300a57db566de6161182
 opusfile-cmake.patch                   = a9ee0f8ad67e6982fc17025f77a12912af378c55c0c9a5edfda5ffd5b89b045f
+qtbase-openssl4.patch                  = ac1cbfeda9370d687d80d6d9aa0918f05a197549d0ecb463e7096ea85d983962
 qtbase-qwindowswindow.patch            = 8f4863e7c5c10b503ea405e4eeec47bb8995461c70af37949114a967d3be7aa0
 sparsehash-msvc.patch                  = 138f6567120e233329f26a1ee2485b57460395629549c1eed114bfc210b52386
 speex-cmake.patch                      = 87e17e7f57660bf884bdf106bbf32972a96bbf4131b2014483f9e14779af9fa1
 twolame.patch                          = ad0bf19387e842ce6070a7a812a80237b16591441f6b822909722d3870a01c88
 yasm-cmake.patch                       = a0c6f4becb5314dbfcf3f845e143bbaf80c216a76612f5e6cb968d3ee1a795b8
-strawberry-msvc-x86_64-release.tar.xz  = b71f82e9fba30fb415caaf85deb2da876a71fbbcbf1e33815875cfff8b6fc1c3
-strawberry-msvc-x86_64-debug.tar.xz    = f644dbaaff895a25d91d02e845eefc2bb7a78e14e43c9dbd8f790a2c7fb2425f
+strawberry-msvc-x86_64-release.tar.xz  = b605f9a40a7cd428bee01b65335b214eafcd2228340e85f60ef19328067f15ae
+strawberry-msvc-x86_64-debug.tar.xz    = 8f1e9545ae39ccff3c53439e263af715faea60f32ad8ada88dc8fcbaed5fe602
 '@
 
     $SIGNED_FILES = @'
@@ -249,7 +273,7 @@ https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMA
 https://www.nasm.us/pub/nasm/releasebuilds/${NASM_VERSION}/win64/nasm-${NASM_VERSION}-installer-x64.exe
 # http://www.tortall.net/projects/yasm/releases/yasm-${YASM_VERSION}.tar.gz
 https://github.com/lexxmark/winflexbison/releases/download/v${WIN_FLEX_BISON_VERSION}/win_flex_bison-${WIN_FLEX_BISON_VERSION}.zip
-https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_${STRAWBERRY_PERL_VERSION_STRIPPED}_64bit_UCRT/strawberry-perl-${STRAWBERRY_PERL_VERSION}-64bit.msi
+https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_${STRAWBERRY_PERL_VERSION_STRIPPED}_64bit/strawberry-perl-${STRAWBERRY_PERL_VERSION}-64bit.msi
 https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-amd64.exe
 https://7-zip.org/a/7z${7ZIP_VERSION}-x64.exe
 https://prdownloads.sourceforge.net/nsis/nsis-${NSIS_VERSION}-setup.exe
@@ -269,14 +293,15 @@ https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-build-to
 # https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/getopt-win-cmake.patch
 # https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/gst-plugins-bad-meson-dependency.patch
 # https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/gst-plugins-bad-wasapi2.patch
-https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/gstreamer-macros-restrict.patch
+# https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/gstreamer-macros-restrict.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libbs2b-msvc.patch
 # https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libbs2b-clipping.patch
-https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libgme-pkgconf.patch
+# https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libgme-pkgconf.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libopenmpt-cmake.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/libpng-pkgconf.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/musepack-fixes.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/opusfile-cmake.patch
+https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches//qtbase-openssl4.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/qtbase-qwindowswindow.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/sparsehash-msvc.patch
 https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/${MSVC_DEPS_REPO_COMMIT}/patches/speex-cmake.patch
@@ -294,7 +319,7 @@ https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz
 https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz
 https://github.com/ShiftMediaProject/gnutls/releases/download/${GNUTLS_VERSION}/libgnutls_${GNUTLS_VERSION}_msvc17.zip
 https://downloads.sourceforge.net/project/libpng/libpng16/${LIBPNG_VERSION}/libpng-${LIBPNG_VERSION}.tar.gz
-https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/${LIBJPEG_VERSION}/libjpeg-turbo-${LIBJPEG_VERSION}.tar.gz
+https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/${LIBJPEG_TURBO_VERSION}/libjpeg-turbo-${LIBJPEG_TURBO_VERSION}.tar.gz
 https://github.com/PhilipHazel/pcre2/releases/download/pcre2-${PCRE2_VERSION}/pcre2-${PCRE2_VERSION}.tar.bz2
 https://sourceware.org/pub/bzip2/bzip2-${BZIP2_VERSION}.tar.gz
 https://downloads.sourceforge.net/project/lzmautils/xz-${XZ_VERSION}.tar.gz
@@ -315,10 +340,7 @@ https://downloads.sourceforge.net/project/lame/lame/${LAME_VERSION}/lame-${LAME_
 https://github.com/nemtrif/utfcpp/archive/refs/tags/v${UTFCPP_VERSION}/utfcpp-${UTFCPP_VERSION}.tar.gz
 https://taglib.org/releases/taglib-${TAGLIB_VERSION}.tar.gz
 https://github.com/dlfcn-win32/dlfcn-win32/archive/refs/tags/v${DLFCN_VERSION}/dlfcn-win32-${DLFCN_VERSION}.tar.gz
-https://files.strawberrymusicplayer.org/fftw-${FFTW_VERSION}-x64-debug.zip
-https://files.strawberrymusicplayer.org/fftw-${FFTW_VERSION}-x64-release.zip
-https://files.strawberrymusicplayer.org/fftw-${FFTW_VERSION}-x86-debug.zip
-https://files.strawberrymusicplayer.org/fftw-${FFTW_VERSION}-x86-release.zip
+https://fftw.org/fftw-${FFTW_SOURCE_VERSION}.tar.gz
 https://github.com/acoustid/chromaprint/releases/download/v${CHROMAPRINT_VERSION}/chromaprint-${CHROMAPRINT_VERSION}.tar.gz
 https://download.gnome.org/sources/glib/$($GLIB_VERSION -replace '\.\d+$')/glib-${GLIB_VERSION}.tar.xz
 # https://download.gnome.org/sources/glib-networking/$($GLIB_NETWORKING_VERSION -replace '\.\d+$')/glib-networking-${GLIB_NETWORKING_VERSION}.tar.xz
@@ -368,10 +390,10 @@ https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-$
 https://github.com/jasper-software/jasper/releases/download/version-${JASPER_VERSION}/jasper-${JASPER_VERSION}.tar.gz
 "@
     $PrecompiledDepsTargets = @"
-# https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/release-$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86-release.tar.xz
-# https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/release-$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86-debug.tar.xz
-https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/release-$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86_64-release.tar.xz
-https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/release-$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86_64-debug.tar.xz
+# https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86-release.tar.xz
+# https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86-debug.tar.xz
+https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86_64-release.tar.xz
+https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases/download/$MSVC_DEPS_REPO_RELEASE/strawberry-msvc-x86_64-debug.tar.xz
 "@
 
     $Additional = if ($FromScratch) { $FromScratchTargets } else { $PrecompiledDepsTargets }

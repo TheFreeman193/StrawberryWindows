@@ -7,10 +7,10 @@ using namespace System.Collections.Specialized
 [CmdletBinding()]
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [string]$MsvcCommit = '7d565a99ebbbf2f8fbafa539d3e54adda098260d', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
-    [string]$MsvcDepsCommit = 'f3876923db3993933a36de71ba288f0a6b90a15c', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
-    [string]$MsvcDepsRelease = '24508996352', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
-    [string]$StrawberryCommit = '999407e4f41bb4895d159b289763befc613ee3d8', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
+    [string]$MsvcCommit = '80ca6069883ed817eac473b2b1c54e67b7e60d37', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
+    [string]$MsvcDepsCommit = 'a37ca2bd3da3b707903813269de6ecead7ff90fc', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
+    [string]$MsvcDepsRelease = '3520', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
+    [string]$StrawberryCommit = '01364200bb118d79b210cfdf50134e1b5e9a63de', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
     [string]$CMakeVersion = '4.2.3',
     [string]$7ZipVersion = '2600',
     [string]$GitVersion = '2.53.0',
@@ -26,7 +26,7 @@ process {
     if (-not $?) { return }
 
     $SB = [StringBuilder]::new()
-    $VERSIONS = (Get-Content $VersionTemp -Raw | ConvertFrom-StringData)
+    $VERSIONS = Get-Content $VersionTemp -Raw | ConvertFrom-StringData
     foreach ($Key in $VERSIONS.Keys) {
         $PSCmdlet.WriteVerbose("${Key}: $($VERSIONS[$Key])")
     }
@@ -36,7 +36,7 @@ process {
     $End = $Workflow.IndexOf('jobs:')
     $NameMap = @{
         GSTREAMER_PLUGINS_RS_VERSION = 'GSTREAMER_GST_PLUGINS_RS_VERSION'
-        LIBJPEG_TURBO_VERSION        = 'LIBJPEG_VERSION'
+        # LIBJPEG_TURBO_VERSION        = 'LIBJPEG_VERSION'
         PE_PARSE_VERSION             = 'PEPARSE_VERSION'
         SQLITE3_VERSION              = 'SQLITE_VERSION'
         WINFLEXBISON_VERSION         = 'WIN_FLEX_BISON_VERSION'
@@ -50,7 +50,9 @@ process {
             $Key = $NameMap[$Key]
         }
         $Value = $Matches[2]
-        $PSCmdlet.WriteVerbose("${Key}: $($VERSIONS[$Key]) -> $Value")
+        if ($VERSIONS[$Key] -ine $Value) {
+            $PSCmdlet.WriteVerbose("UPDATE ${Key}: $($VERSIONS[$Key]) -> $Value")
+        }
         $VERSIONS[$Key] = $Value
     }
 
