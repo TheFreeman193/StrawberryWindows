@@ -329,7 +329,7 @@ process {
         if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
             Write-Host -fo Cyan '    Meson configure...'
             meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared --prefix="$DependsPath" `
-                --wrap-mode=nodownload -Dtests=disabled "$LocalBuildPath\build" $LocalBuildPath | Out-Default
+                --wrap-mode=nodownload "$LocalBuildPath\build" $LocalBuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
         Write-Host -fo Cyan '    Ninja build...'
@@ -340,45 +340,6 @@ process {
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Copy pkgconf -> pkg-config...'
         Copy-Item "$DependsPath\bin\pkgconf.exe" "$DependsPath\bin\pkg-config.exe" -Force
-        if (-not $?) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
-    function BuildMimAlloc {
-        $LocalBuildPath = "$BuildPath\mimalloc-$MIMALLOC_VERSION"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Extract source...'
-            tar.exe -xf "$DownloadPath\mimalloc-$MIMALLOC_VERSION.tar.gz" -C $BuildPath | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
-            Write-Host -fo Cyan '    Create build directory...'
-            $null = New-Item "$LocalBuildPath\build" -ItemType Directory -Force
-            if (-not $?) { return }
-        }
-        Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DBUILD_SHARED_LIBS=ON `
-            -DBUILD_STATIC_LIBS=OFF `
-            -DMI_BUILD_SHARED=ON `
-            -DMI_BUILD_STATIC=OFF `
-            -DMI_BUILD_TESTS=OFF `
-            -DMI_CHECK_FULL=OFF `
-            -DMI_DEBUG_FULL=OFF `
-            -DMI_DEBUG_TSAN=OFF `
-            -DMI_DEBUG_UBSAN=OFF `
-            -DMI_OVERRIDE=ON `
-            -DMI_USE_CXX=ON `
-            -DMI_WIN_REDIRECT=ON | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    CMake build...'
-        cmake.exe --build "$LocalBuildPath\build" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    CMake install...'
-        cmake.exe --install "$LocalBuildPath\build" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Move-Item "$DependsPath\lib\mimalloc*.dll" "$DependsPath\bin\" -Force
         if (-not $?) { return }
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
@@ -529,181 +490,7 @@ Requires: libssl libcrypto
         if (-not $?) { return }
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
-    function BuildGmp {
-        $LocalBuildPath = "$BuildPath\ShiftMediaProject\build"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            $null = New-Item -ItemType Directory $LocalBuildPath
-        }
-        if (-not (Test-Path "$LocalBuildPath\gmp" -PathType Container)) {
-            $null = New-Item -ItemType Directory "$LocalBuildPath\gmp"
-            Write-Host -fo Cyan '    Copy source repo...'
-            xcopy.exe /B /Y /R /I /H /E /Q "$DownloadPath\gmp" "$LocalBuildPath\gmp" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        if (-not (Test-Path "$LocalBuildPath\gmp\SMP\Backup\libgmp.vcxproj")) {
-            Write-Host -fo Cyan '    Upgrade VS solution...'
-            Start-Process devenv.exe -ArgumentList "$LocalBuildPath\gmp\SMP\libgmp.vcxproj", '/upgrade' -Wait
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Write-Host -fo Cyan '    MSBuild build...'
-        msbuild.exe "$LocalBuildPath\gmp\SMP\libgmp.vcxproj" -p:Configuration="${BuildType}DLL" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy library...'
-        Copy-Item "$LocalBuildPath\..\msvc\lib\$BuildArch\gmp${DebugPostfix}.lib" "$DependsPath\lib\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy binary...'
-        Copy-Item "$LocalBuildPath\..\msvc\bin\$BuildArch\gmp${DebugPostfix}.dll" "$DependsPath\bin\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy includes...'
-        Copy-Item "$LocalBuildPath\..\msvc\include\gmp*.h" "$DependsPath\include\" -Force
-        if (-not $?) { return }
-        Set-Content -Path "$DependsPath\lib\pkgconfig\gmp.pc" -Force -Value @"
-$PkgconfTemplate
 
-Name: gmp
-Description: ShiftMediaProject GMP
-Version: $GMP_VERSION
-Libs: -L`${libdir} -lgmp${DebugPostfix}
-Cflags: -I`${includedir}
-"@
-        if (-not $?) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-    function BuildNettle {
-        $LocalBuildPath = "$BuildPath\ShiftMediaProject\build"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            $null = New-Item -ItemType Directory $LocalBuildPath
-        }
-        if (-not (Test-Path "$LocalBuildPath\nettle" -PathType Container)) {
-            $null = New-Item -ItemType Directory "$LocalBuildPath\nettle"
-            Write-Host -fo Cyan '    Copy source repo...'
-            xcopy.exe /B /Y /R /I /H /E /Q "$DownloadPath\nettle" "$LocalBuildPath\nettle" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Write-Host -fo Cyan '    nettle MSBuild build...'
-        msbuild.exe "$LocalBuildPath\nettle\SMP\libnettle.vcxproj" -p:Configuration="${BuildType}DLL" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy library...'
-        Copy-Item "$LocalBuildPath\..\msvc\lib\$BuildArch\nettle${DebugPostfix}.lib" "$DependsPath\lib\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy binary...'
-        Copy-Item "$LocalBuildPath\..\msvc\bin\$BuildArch\nettle${DebugPostfix}.dll" "$DependsPath\bin\" -Force
-        if (-not (Test-Path "$DependsPath\include\nettle" -PathType Container)) {
-            Write-Host -fo Cyan '    Create include path...'
-            $null = New-Item -ItemType Directory "$DependsPath\include\nettle"
-        }
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy includes...'
-        Copy-Item "$LocalBuildPath\..\msvc\include\nettle\*.h" "$DependsPath\include\nettle" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    hogweed MSBuild build...'
-        msbuild.exe "$LocalBuildPath\nettle\SMP\libhogweed.vcxproj" -p:Configuration="${BuildType}DLL" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy library...'
-        Copy-Item "$LocalBuildPath\..\msvc\lib\$BuildArch\hogweed${DebugPostfix}.lib" "$DependsPath\lib\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy binary...'
-        Copy-Item "$LocalBuildPath\..\msvc\bin\$BuildArch\hogweed${DebugPostfix}.dll" "$DependsPath\bin\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy includes...'
-        Copy-Item "$LocalBuildPath\..\msvc\include\nettle\*.h" "$DependsPath\include\nettle" -Force
-        if (-not $?) { return }
-        Set-Content -Path "$DependsPath\lib\pkgconfig\nettle.pc" -Force -Value @"
-$PkgconfTemplate
-
-Name: nettle
-Description: ShiftMediaProject nettle
-URL: https://www.lysator.liu.se/~nisse/nettle/
-Version: $NETTLE_VERSION
-Libs: -L`${libdir} -lnettle${DebugPostfix}
-Cflags: -I`${includedir}
-"@
-        if (-not $?) { return }
-        Set-Content -Path "$DependsPath\lib\pkgconfig\hogweed.pc" -Force -Value @"
-$PkgconfTemplate
-
-Name: hogweed
-Description: ShiftMediaProject hogweed
-URL: https://www.lysator.liu.se/~nisse/nettle/
-Version: $NETTLE_VERSION
-Libs: -L`${libdir} -lhogweed${DebugPostfix}
-Cflags: -I`${includedir}
-"@
-        if (-not $?) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
-    function BuildGnutls {
-        $LocalBuildPath = "$BuildPath\ShiftMediaProject\build"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            $null = New-Item -ItemType Directory $LocalBuildPath
-        }
-        if (-not (Test-Path "$LocalBuildPath\gnutls" -PathType Container)) {
-            $null = New-Item -ItemType Directory "$LocalBuildPath\gnutls"
-            Write-Host -fo Cyan '    Copy source repo...'
-            xcopy.exe /B /Y /R /I /H /E /Q "$DownloadPath\gnutls" "$LocalBuildPath\gnutls" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        <# Set-Content "$LocalBuildPath\gnutls\SMP\inject_zlib.props" -Value @"
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$DependsPath\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <AdditionalLibraryDirectories>$DependsPath\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Link>
-  </ItemDefinitionGroup>
-</Project>
-"@ #>
-        Push-Location "$LocalBuildPath\gnutls\SMP\"
-        Write-Host -fo Cyan '    Fetch GnuTLS dependencies...'
-        "`r`n" | & '.\project_get_dependencies.bat'
-        if ($LASTEXITCODE -ne 0) { Pop-Location; return }
-        Write-Host -fo Cyan '    GMP static dependency build...'
-        msbuild.exe "$LocalBuildPath\gmp\SMP\libgmp.vcxproj" -p:Configuration=Release | Out-Default
-        if ($LASTEXITCODE -ne 0) { Pop-Location; return }
-        Write-Host -fo Cyan '    zlib static dependency build...'
-        msbuild.exe "$LocalBuildPath\zlib\SMP\libzlib.vcxproj" -p:Configuration=Release | Out-Default
-        if ($LASTEXITCODE -ne 0) { Pop-Location; return }
-        Write-Host -fo Cyan '    nettle static dependency build...'
-        msbuild.exe "$LocalBuildPath\nettle\SMP\libnettle.vcxproj" -p:Configuration=Release | Out-Default
-        if ($LASTEXITCODE -ne 0) { Pop-Location; return }
-        Write-Host -fo Cyan '    hogweed static dependency build...'
-        msbuild.exe "$LocalBuildPath\nettle\SMP\libhogweed.vcxproj" -p:Configuration=Release | Out-Default
-        if ($LASTEXITCODE -ne 0) { Pop-Location; return }
-        Write-Host -fo Cyan '    GNUTLS MSBuild build...'
-        msbuild.exe "$LocalBuildPath\gnutls\SMP\libgnutls.vcxproj" -p:Configuration=ReleaseDLLStaticDeps | Out-Default
-        Pop-Location
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy library...'
-        Copy-Item "$LocalBuildPath\..\msvc\lib\$BuildArch\gnutls.lib" "$DependsPath\lib\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy binary...'
-        Copy-Item "$LocalBuildPath\..\msvc\bin\$BuildArch\gnutls.dll" "$DependsPath\bin\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy includes...'
-        if (-not (Test-Path "$DependsPath\include\gnutls\" -PathType Container)) {
-            $null = New-Item -ItemType Directory "$DependsPath\include\gnutls"
-        }
-        Copy-Item "$LocalBuildPath\..\msvc\include\gnutls\*.h" "$DependsPath\include\gnutls\" -Force
-        if (-not $?) { return }
-        Set-Content -Path "$DependsPath\lib\pkgconfig\gnutls.pc" -Force -Value @"
-$PkgconfTemplate
-
-Name: gnutls
-Description: gnutls (static deps)
-URL: https://www.gnutls.org/
-Version: $GNUTLS_VERSION
-Libs: -L`${libdir} -lgnutls
-Cflags: -I`${includedir}
-"@
-        if (-not $?) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
     function BuildLibpng {
         $LocalBuildPath = "$BuildPath\libpng-$LIBPNG_VERSION"
         if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
@@ -883,34 +670,6 @@ Cflags: -I`${includedir}
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
-    function BuildLibiconv {
-        $LocalBuildPath = "$BuildPath\libiconv-for-Windows"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Copy source repo...'
-            Copy-Item "$DownloadPath\libiconv-for-Windows" $LocalBuildPath -Recurse -Force
-            if (-not $?) { return }
-        }
-        Write-Host -fo Cyan '    MSBuild build...'
-        msbuild.exe "$LocalBuildPath\libiconv.sln" -p:Configuration="$BuildType" -p:Platform="$BuildArch" -p:SkipUWP=true | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Copy libraries...'
-        Copy-Item "$LocalBuildPath\output\$BuildArch32Alt\$BuildType\*.lib" "$DependsPath\lib\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy binaries...'
-        Copy-Item "$LocalBuildPath\output\$BuildArch32Alt\$BuildType\*.dll" "$DependsPath\bin\" -Force
-        if (-not $?) { return }
-        Write-Host -fo Cyan '    Copy headers...'
-        Copy-Item "$LocalBuildPath\include\*.h" "$DependsPath\include\" -Force
-        if (-not $?) { return }
-        if ($ISDEBUG) {
-            Write-Host -fo Cyan '    Duplicate debug library...'
-            Copy-Item "$DependsPath\lib\libiconv$DebugPostfix.lib" "$DependsPath\lib\libiconv.lib" -Force
-        }
-        if (-not $?) { return }
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
@@ -1244,6 +1003,7 @@ Requires: icu-i18n
                 --pkg-config-path="$DependsPath\lib\pkgconfig" `
                 -Dc_args="-I$DependsPathForward/include" `
                 -Dc_link_args="-L$DependsPath\lib" `
+                -Druntime=libicu `
                 "$LocalBuildPath\build" $LocalBuildPath | Out-Default
             if ($LASTEXITCODE -ne 0) { return }
         }
@@ -1279,32 +1039,6 @@ Requires: icu-i18n
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    Ninja install...'
         ninja.exe -C "$LocalBuildPath\build" install | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
-    function BuildLibcurl {
-        $LocalBuildPath = "$BuildPath\curl-$CURL_VERSION"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Extract source...'
-            tar.exe -xf "$DownloadPath\curl-$CURL_VERSION.tar.gz" -C $BuildPath | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        if (-not (Test-Path "$LocalBuildPath\build" -PathType Container)) {
-            Write-Host -fo Cyan '    Create build directory...'
-            $null = New-Item "$LocalBuildPath\build" -ItemType Directory -Force
-            if (-not $?) { return }
-        }
-        Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DBUILD_SHARED_LIBS=ON | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    CMake build...'
-        cmake.exe --build "$LocalBuildPath\build" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    CMake install...'
-        cmake.exe --install "$LocalBuildPath\build" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
@@ -1386,53 +1120,6 @@ Cflags: -I`${includedir}
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
-    function BuildLibproxy {
-        # Doesn't compile with MSVC
-        $LocalBuildPath = "$BuildPath\libproxy-$LIBPROXY_VERSION"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Extract source...'
-            tar.exe -xf "$DownloadPath\libproxy-$LIBPROXY_VERSION.tar.gz" -C $BuildPath | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Push-Location $LocalBuildPath
-        if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
-            Write-Host -fo Cyan '    Meson configure...'
-            meson.exe setup `
-                --buildtype="$BuildTypeMeson" `
-                --default-library=shared `
-                --wrap-mode=nodownload `
-                --prefix="$DependsPath" `
-                --pkg-config-path="$DependsPath\lib\pkgconfig" `
-                --includedir="$DependsPath\include" `
-                --libdir="$DependsPath\lib" `
-                -Dc_args="-I$DependsPathForward/include" `
-                -Drelease="$IsRelease" `
-                -Ddocs=false `
-                -Dtests=false `
-                -Dconfig-xdp=false `
-                -Dconfig-kde=false `
-                -Dconfig-osx=false `
-                -Dconfig-gnome=false `
-                -Dpacrunner-duktape=false `
-                -Dintrospection=false `
-                -DHAVE_CURL=false `
-                "$LocalBuildPath\build" $LocalBuildPath | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Pop-Location
-        Write-Host -fo Cyan '    Ninja build...'
-        ninja.exe -C "$LocalBuildPath\build" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Ninja install...'
-        ninja.exe -C "$LocalBuildPath\build" install | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Move binaries to bin...'
-        Move-Item "$DependsPath\lib\libproxy.dll" "$DependsPath\bin\libproxy.dll" -Force
-        if (-not $?) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
     function BuildLibsoup {
         $LocalBuildPath = "$BuildPath\libsoup-$LIBSOUP_VERSION"
         if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
@@ -1488,7 +1175,7 @@ Cflags: -I`${includedir}
                 -Dc_args="-I$DependsPathForward/include" `
                 --includedir="$DependsPath\include" `
                 --libdir="$DependsPath\lib" `
-                -Dgnutls=enabled `
+                -Dgnutls=disabled `
                 -Dopenssl=enabled `
                 -Dgnome_proxy=disabled `
                 -Dlibproxy=disabled `
@@ -1540,49 +1227,6 @@ Cflags: -I`${includedir}
             Copy-Item "$DependsPath\lib\freetype$DebugPostfix.lib" "$DependsPath\lib\freetype.lib" -Force
         }
         if (-not $?) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
-    function BuildCairo {
-        $LocalBuildPath = "$BuildPath\cairo-$CAIRO_VERSION"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Extract source...'
-            7z.exe x -aos "$DownloadPath\cairo-$CAIRO_VERSION.tar.xz" -o"$DownloadPath" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-            7z.exe x -aoa "$DownloadPath\cairo-$CAIRO_VERSION.tar" -o"$BuildPath" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Write-Host -fo Cyan '    Patch alloca (Linux) -> _alloca (MSVC)...'
-        foreach ($File in (Get-ChildItem "$LocalBuildPath\src\*.c")) {
-            (Get-Content $File) -creplace '\balloca(\s*\()', '_alloca$1' | Set-Content $File
-            if (-not $?) { return }
-        }
-        Write-Host -fo Cyan '    Copy libpng lib...'
-        Copy-Item "$DependsPath\lib\libpng16$DebugPostfix.lib" "$DependsPath\lib\png16.lib" -Force
-        if (-not (Test-Path "$LocalBuildPath\build\build.ninja")) {
-            Write-Host -fo Cyan '    Meson configure...'
-            meson.exe setup --buildtype="$BuildTypeMeson" --default-library=shared `
-                --prefix="$DependsPath" `
-                --pkg-config-path="$DependsPath\lib\pkgconfig" `
-                -Dc_args="-I$DependsPathForward/include" `
-                --includedir="$DependsPath\include" `
-                --libdir="$DependsPath\lib" `
-                -Dfontconfig=disabled `
-                -Dfreetype=enabled `
-                -Dzlib=enabled `
-                -Dpng=enabled `
-                -Dtests=disabled `
-                -Dgtk_doc=false `
-                "$LocalBuildPath\build" $LocalBuildPath | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Write-Host -fo Cyan '    Ninja build...'
-        ninja.exe -C "$LocalBuildPath\build" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    Ninja install...'
-        ninja.exe -C "$LocalBuildPath\build" install | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
@@ -3087,32 +2731,6 @@ Cflags: -I`${includedir}
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
-    function BuildRapidjson {
-        $LocalBuildPath = "$BuildPath\rapidjson"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path $LocalBuildPath -PathType Container)) {
-            Write-Host -fo Cyan '    Copy source repo...'
-            Copy-Item "$DownloadPath\rapidjson" $LocalBuildPath -Recurse -Force
-            if (-not $?) { return }
-        }
-        Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_INSTALL_DIR="$DependsPath\lib\cmake\RapidJSON" `
-            -DBUILD_SHARED_LIBS=ON `
-            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
-            -DBUILD_TESTING=OFF `
-            -DRAPIDJSON_BUILD_TESTS=OFF `
-            -DRAPIDJSON_BUILD_EXAMPLES=OFF `
-            -DRAPIDJSON_BUILD_DOC=OFF | Out-Default
-        Write-Host -fo Cyan '    CMake build...'
-        cmake.exe --build "$LocalBuildPath\build" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        Write-Host -fo Cyan '    CMake install...'
-        cmake.exe --install "$LocalBuildPath\build" | Out-Default
-        if ($LASTEXITCODE -ne 0) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
     function BuildKdsingleapp {
         $LocalBuildPath = "$BuildPath\kdsingleapplication-$KDSINGLEAPPLICATION_VERSION"
         if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
@@ -3196,21 +2814,6 @@ Cflags: -I`${includedir}
         Write-Host -fo Cyan '    CMake install...'
         cmake.exe --install "$LocalBuildPath\build" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
-        if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-    }
-
-    function BuildGettext {
-        $LocalBuildPath = "$BuildPath\gettext${GETTEXT_VERSION}-iconv${ICONV_VERSION}"
-        if ($PreCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
-        if (-not (Test-Path "$BuildPath\gettext${GETTEXT_VERSION}-iconv*" -PathType Container)) {
-            $SourceZip = Get-Item "$DownloadPath\gettext${GETTEXT_VERSION}-iconv${ICONV_VERSION}-static-$BuildAddressSize.zip"
-            Write-Host -fo Cyan '    Extract archive...'
-            7z.exe x -aoa $SourceZip -o"$LocalBuildPath" | Out-Default
-            if ($LASTEXITCODE -ne 0) { return }
-        }
-        Write-Host -fo Cyan '    Copy binaries...'
-        Copy-Item "$LocalBuildPath\bin\*.exe" "$DependsPath\bin\"
-        if (-not $?) { return }
         if ($PostCleanup) { Remove-Item $LocalBuildPath -Recurse -Force -ErrorAction Ignore }
     }
 
@@ -3689,20 +3292,15 @@ Cflags: -I`${includedir}
         "pkgconf $PKGCONF_VERSION"                     = 'BuildPkgConf', '*', "$DependsPath\bin\pkgconf.exe"
         "Yasm $YASM_VERSION"                           = 'BuildYasm', '*', "$DependsPath\bin\yasm.exe"
         "Libintl $PROXY_LIBINTL_VERSION"               = 'BuildLibintl', '*', "$DependsPath\lib\intl.lib"
-        # "mimalloc $MIMALLOC_VERSION"                    = 'BuildMimAlloc', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\mimalloc.pc"
         "getopt-win ($(GetRepoCommit getopt-win))"     = 'BuildGetOpt', '*', "$DependsPath\lib\getopt.lib"
         "zlib $ZLIB_VERSION"                           = 'BuildZlib', '*', "$DependsPath\lib\z.lib"
         "OpenSSL $OPENSSL_VERSION"                     = 'BuildOpenSSL', '*', "$DependsPath\lib\pkgconfig\openssl.pc"
-        # "GMP $GMP_VERSION"                              = 'BuildGmp', '*', "$DependsPath\lib\pkgconfig\gmp.pc"
-        # "Nettle $NETTLE_VERSION"                        = 'BuildNettle', '*', "$DependsPath\lib\pkgconfig\nettle.pc"
-        "GnuTLS $GNUTLS_VERSION"                       = 'BuildGnutls', 'x(?:86|64)', "$DependsPath\lib\pkgconfig\gnutls.pc"
         "libpng $LIBPNG_VERSION"                       = 'BuildLibpng', '*', "$DependsPath\lib\pkgconfig\libpng.pc"
         "libjpeg $LIBJPEG_TURBO_VERSION"               = 'BuildLibjpeg', '*', "$DependsPath\lib\pkgconfig\libjpeg.pc"
         "PCRE2 $PCRE2_VERSION"                         = 'BuildPcre2', '*', "$DependsPath\lib\pkgconfig\libpcre2-16.pc"
         "bzip2 $BZIP2_VERSION"                         = 'BuildBzip2', '*', "$DependsPath\lib\pkgconfig\bzip2.pc"
         "xz $XZ_VERSION"                               = 'BuildXz', '*', "$DependsPath\lib\pkgconfig\liblzma.pc"
         "Brotli $BROTLI_VERSION"                       = 'BuildBrotli', '*', "$DependsPath\lib\pkgconfig\libbrotlicommon.pc"
-        # "Iconv ($(GetRepoCommit libiconv-for-Windows))" = 'BuildLibiconv', '*', "$DependsPath\lib\libiconv*.lib"
         "Icu4c $ICU4C_VERSION"                         = 'BuildIcu4c', '*', "$DependsPath\lib\pkgconfig\icu-uc.pc"
         "Pixman $PIXMAN_VERSION"                       = 'BuildPixman', '*', "$DependsPath\lib\pkgconfig\pixman-1.pc"
         "Expat $EXPAT_VERSION"                         = 'BuildExpat', '*', "$DependsPath\lib\pkgconfig\expat.pc"
@@ -3713,14 +3311,11 @@ Cflags: -I`${includedir}
         "Dlfcn $DLFCN_VERSION"                         = 'BuildDlfcn', '*', "$DependsPath\include\dlfcn.h"
         "Libpsl $LIBPSL_VERSION"                       = 'BuildLibpsl', '*', "$DependsPath\lib\pkgconfig\libpsl.pc"
         "Orc $ORC_VERSION"                             = 'BuildOrc', '*', "$DependsPath\lib\pkgconfig\orc-0.4.pc"
-        # "Libcurl $CURL_VERSION"                         = 'BuildLibcurl', '*', "$DependsPath\lib\pkgconfig\libcurl.pc"
         "Sqlite $SQLITE_VERSION"                       = 'BuildSqlite', '*', "$DependsPath\lib\pkgconfig\sqlite3.pc"
         "Glib $GLIB_VERSION"                           = 'BuildGlib', '*', "$DependsPath\lib\pkgconfig\glib-2.0.pc"
-        # "Libproxy $LIBPROXY_VERSION"                    = 'BuildLibproxy', '*', "$DependsPath\lib\libproxy.lib" # Doesn't compile with MSVC
         "Libsoup $LIBSOUP_VERSION"                     = 'BuildLibsoup', '*', "$DependsPath\lib\pkgconfig\libsoup-3.0.pc"
         "GlibNetworking $GLIB_NETWORKING_VERSION"      = 'BuildGlibNetworking', '*', "$DependsPath\lib\gio\modules\gioopenssl.lib"
         "Freetype $FREETYPE_VERSION"                   = 'BuildFreetype', '*', "$DependsPath\lib\freetype.lib"
-        # "Cairo $CAIRO_VERSION"                          = 'BuildCairo', '*', "$DependsPath\lib\pkgconfig\cairo.pc"
         "Harfbuzz $HARFBUZZ_VERSION"                   = 'BuildHarfbuzz', '*', "$DependsPath\lib\harfbuzz*.lib"
         "Jasper $JASPER_VERSION"                       = 'BuildJasper', '*', "$DependsPath\lib\pkgconfig\jasper.pc"
         "Tiff $TIFF_VERSION"                           = 'BuildTiff', '*', "$DependsPath\lib\pkgconfig\libtiff-4.pc"
@@ -3764,10 +3359,8 @@ Cflags: -I`${includedir}
         "KDsingleapp $KDSINGLEAPPLICATION_VERSION"     = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
         "Qtsparkle ($(GetRepoCommit qtsparkle))"       = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
         "Sparsehash $SPARSEHASH_VERSION"               = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
-        # "Rapidjson ($(GetRepoCommit rapidjson))"        = 'BuildRapidjson', '*', "$DependsPath\lib\cmake\RapidJSON\RapidJSONConfig.cmake"
         "Glew $GLEW_VERSION"                           = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
         "Libprojectm $LIBPROJECTM_VERSION"             = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
-        # "Gettext $GETTEXT_VERSION"                      = 'BuildGettext', '*', "$DependsPath\bin\gettext.exe"
         "Tinysvcmdns ($(GetRepoCommit tinysvcmdns))"   = 'BuildTinysvcmdns', '*', "$DependsPath\lib\pkgconfig\tinysvcmdns.pc"
         "Pe-parse $PEPARSE_VERSION"                    = 'BuildPeParse', '*', "$DependsPath\lib\pe-parse.lib"
         "Pe-util ($(GetRepoCommit pe-util))"           = 'BuildPeUtil', '*', "$DependsPath\bin\peldd.exe"

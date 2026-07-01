@@ -12,7 +12,7 @@ I am not currently building for ARM64 as none of my systems run this architectur
 
 These builds rely on the Microsoft Visual C++ redistributable to run.
 This should install automatically when using the NSIS installer.
-If it doesn't, or you are extracting from the archive, you can get the latest redistributable from the [Microsoft website](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist#latest-microsoft-visual-c-redistributable-version).
+If it doesn't, you can get the latest redistributable from the [Microsoft website](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist#latest-microsoft-visual-c-redistributable-version).
 
 **[Strawberry Project](https://github.com/strawberrymusicplayer/strawberry)**
 &nbsp;&bull;&nbsp;
@@ -33,10 +33,10 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 - Windows 10 Enterprise LTSC 10.0.19044.0 on Hyper-V assigned with:
   - 8c Intel 9th Gen @ 4.8 GHz, 8-64 GB dynamically allocated RAM @ 3600 MT/s
   - 64 GB boot disk, 32 GB RAM disk for staging/build targets
-- PowerShell 7.6.0
-- Visual Studio 2022 Community 17.14.31
+- PowerShell 7.6.3
+- Visual Studio 2022 Community 17.14.35
   - C++ core module
-  - MSVC v143
+  - MSVC v14.44.35211.0
   - C++ ATL for MSVC v143
   - JIT debugger
   - C++ profiling tools
@@ -46,16 +46,16 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
   - vcpkg manager
 - Git for Windows 2.54.0
 - Qt 6 build tools for VS2022
-- CMake 4.3.2
-- Meson Build 1.10.1
+- CMake 4.3.3
+- Meson Build 1.11.1
 - Ninja 1.13.0
 - NASM 3.01
 - Strawberry Perl 5.42.2
 - Python 3.14.4
-- 7-Zip 26.00
+- 7-Zip 26.01
 - WinFlex 2.6.4
 - WinBison 3.7.4
-- Rust Compiler 1.95.0
+- Rust Compiler 1.96.1
 - NSIS 3.12
   - LockedList Plugin (DigitalMediaServer fork) 3.1.0.0
   - Registry Plugin 4.2
@@ -63,9 +63,53 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 
 ## Releases
 
-- The nightly builds in the [Releases](https://github.com/TheFreeman193/StrawberryWindows/releases/) section are built with the precompiled dependencies from [strawberry-msvc-dependencies][deps-releases].
+- The nightly builds in the [Releases](https://github.com/TheFreeman193/StrawberryWindows/releases/) section are built with the precompiled dependencies from [strawberry-msvc-dependencies][deps-releases] (x86 builds are always from source now due to upstream discontinuation of x86 support).
 
 - The release builds use dependencies built from source; the build functions for these are in [Build-Strawberry.ps1][build-script].
+
+### Debug Builds
+
+The debug builds rely on the MSVC debug libraries and you should have the correct Visual Studio 2022 MSVC build tools and Windows SDK installed:
+
+- *MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)*
+- *Windows 11 SDK (10.0.22621.0)*
+
+You can run the [`Copy-DebugDependencies.ps1`](https://github.com/TheFreeman193/StrawberryWindows/blob/{2}/Copy-DebugDependencies.ps1) script to copy debug libraries into the Strawberry debug installation folder. To copy these manually, find all DLL files at the following paths:
+
+- `C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\<version>\debug_nonredist\<arch>\*`
+- `C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.UniversalCRT.Debug\<sdk>\Redist\Debug\<arch>\*`
+
+Where `<arch>` is *x64* or *x86* matching your Strawberry archive download name, `<version>` is *14.44.35211* or similar, and `<sdk>` is *10.0.22621.0* or similar.
+`*` means you should find all DLL files in every sub-folder under these paths.
+
+The files you need are:
+
+- `concrt140d.dll`
+- `msvcp140_1d.dll`
+- `msvcp140_2d.dll`
+- `msvcp140d_atomic_wait.dll`
+- `msvcp140d_codecvt_ids.dll`
+- `msvcp140d.dll`
+- `vccorlib140d.dll`
+- `vcruntime140_1d.dll`
+- `vcruntime140_threadsd.dll`
+- `vcruntime140d.dll`
+- `ucrtbased.dll`
+
+#### These Files Don't Exist
+
+Install [VS Build Tools 2022](https://aka.ms/vs/17/release/vs_buildtools.exe):
+
+Open a CMD or PowerShell window and navigate to where you downloaded the build tools installer and run:
+
+```batch
+.\vs_buildtools.exe --wait --passive --installPath C:\vstools --add Microsoft.VisualStudio.Component.VC.14.44.17.14.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.22621
+```
+
+You can replace `C:\vstools` with a path of your choosing. The needed DLL files can then be found at:
+
+- `C:\vstools\VC\Redist\MSVC\14.44.35112\debug_nonredist\<arch>\*`
+- `C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.UniversalCRT.Debug\10.0.22621.0\Redist\Debug\<arch>\*`
 
 ## Code Changes and Build Scripts
 
@@ -103,7 +147,7 @@ If you downloaded the precompiled dependencies by calling Get-Dependencies.ps1 w
 ### Copy-DebugDependencies.ps1
 
 This script is for use with debug builds.
-It copies the debug MSVC libraries from Visual Studio 2022 into the Strawberry debug installation directory, in case you are debugging Strawberry on a different computer without VS2022.
+It copies the debug MSVC and Windows SDK libraries from Visual Studio 2022 into the Strawberry debug installation directory, in case you are debugging Strawberry on a different computer without VS2022.
 
 [deps-releases]: https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
 [build-script]: https://github.com/TheFreeman193/StrawberryWindows/blob/main/Versions.txt
