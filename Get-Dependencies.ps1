@@ -75,6 +75,7 @@ begin {
     $FILE_HASHES = ConvertFrom-StringData @'
 7z2501-x64.exe                         = 78afa2a1c773caf3cf7edf62f857d2a8a5da55fb0fff5da416074c0d28b2b55f
 7z2600-x64.exe                         = 6fe18d5b3080e39678cabfa6cef12cfb25086377389b803a36a3c43236a8a82c
+7z2602-x64.exe                         = 6745fa76dc2ea031596d8678f6f6b99c3c1b435b4164a63485adbbc7b8d82ef0
 abseil-cpp-20260107.0.tar.gz           = 4c124408da902be896a2f368042729655709db5e3004ec99f57e3e14439bc1b2
 boost_1_90_0.tar.gz                    = 5e93d582aff26868d581a52ae78c7d8edf3f3064742c6e77901a1f18a437eea9
 boost_1_91_0.tar.gz                    = 5734305f40a76c30f951c9abd409a45a2a19fb546efe4162119250bbe4d3a463
@@ -162,6 +163,7 @@ libgme-0.6.5-src.tar.gz                = a133f19278222136ba0d8c27b64a07987ba05fe
 libgnutls_3.8.8_msvc17.zip             = 73abaa5d049e106c2a613d752df228f16588eead3a4e4fd47aa9135f67e562b0
 libjpeg-turbo-3.1.3.tar.gz             = 075920b826834ac4ddf97661cc73491047855859affd671d52079c6867c1c6c0
 libjpeg-turbo-3.1.4.1.tar.gz           = ecae8008e2cc9ade2f2c1bb9d5e6d4fb73e7c433866a056bd82980741571a022
+libjpeg-turbo-3.2.0.tar.gz             = 6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e
 libogg-1.3.6.tar.gz                    = 83e6704730683d004d20e21b8f7f55dcb3383cdf84c0daedf30bde175f774638
 libopenmpt-0.8.4+release.msvc.zip      = c9204e2cf490b73633b274c6bfa72f09c347e699d3cf9ba959ae1a25b8229bf7
 libopenmpt-0.8.6+release.msvc.zip      = 17434c052329e035ff7b38986776aafe917723ac52400acef263f207c692ffb4
@@ -187,6 +189,7 @@ mpg123-1.33.5.tar.bz2                  = 0d7ebc8da0aff3ca383c8c6b5a6adbe402ee5bb
 mpg123-1.33.6.tar.bz2                  = 929a7c18ba662b8927aed4de229ad9ae8ab2b4806dd0f30b90113eb1b4e2195a
 musepack_src_r475.tar.gz               = a4b1742f997f83e1056142d556a8c20845ba764b70365ff9ccf2e3f81c427b2b
 nasm-3.01-installer-x64.exe            = 7881e9febc8b6558581041019b7890f109bef0694d93ed82c9589794c7b5a600
+nasm-3.02-installer-x64.exe            = 0ddb40310861eb29f4d649feb9466779982a2d251c0db2b9cf0d21cf591171f3
 nghttp2-1.68.0.tar.bz2                 = 8d80cb4e45adca546a2005b86251ba5a7b63f5ea322228ae28e9969743f99707
 nghttp2-1.68.1.tar.bz2                 = b761b53cb64916657ea84437973d508fd675e96bb2feb9593a1e43d1959abe95
 nghttp2-1.69.0.tar.bz2                 = 3f185f5b1c3e77885eb9cf3f2c4da4b1a9f73a24bf5957b829183ad137f82dc8
@@ -206,6 +209,7 @@ pixman-0.46.4.tar.gz                   = d09c44ebc3bd5bee7021c79f922fe8fb2fb57f7
 pkg-config-0.29.2.tar.gz               = 6fc69c01688c9458a57eb9a1664c9aba372ccda420a02bf4429fe610e7e7d591
 pkgconf-2.5.1.tar.gz                   = 79721badcad1987dead9c3609eb4877ab9b58821c06bdacb824f2c8897c11f2a
 pkgconf-2.9.94.tar.gz                  = 2b34aa86079e108f526ce5f3fb92cfb98c1c0f0e085c42342e5b94f69f8e46dd
+pkgconf-2.9.98.tar.gz                  = fed59c41cb48c56b861b2feb01d4d3777459119c061f161967db49ea3d0b41a3
 protobuf-33.4.tar.gz                   = bc670a4e34992c175137ddda24e76562bb928f849d712a0e3c2fb2e19249bea1
 proxy-libintl-0.5.tar.gz               = f7a1cbd7579baaf575c66f9d99fb6295e9b0684a28b095967cfda17857595303
 python-3.13.3-amd64.exe                = 698f2df46e1a3dd92f393458eea77bd94ef5ff21f0d5bf5cf676f3d28a9b4b6c
@@ -237,6 +241,7 @@ taglib-2.1.1.tar.gz                    = 3716d31f7c83cbf17b67c8cf44dd82b2a2f17e6
 taglib-2.2.1.tar.gz                    = 7e76b5299dcef427c486bffe455098470c8da91cf3ccb9ea804893df57389b5e
 taglib-2.3.tar.gz                      = 7349f6fd942418bc7009ebe743eb7c9d055f02921ec56fa436ec25007c47fd38
 tiff-4.7.1.tar.gz                      = f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69
+tiff-4.7.2.tar.gz                      = 672bd7d10aee4606171afb864f3570b83340f6a33e2c186dc0512f7145ffdf6a
 twolame-0.4.0.tar.gz                   = cc35424f6019a88c6f52570b63e1baf50f62963a3eac52a03a800bb070d7c87d
 utfcpp-4.0.9.tar.gz                    = 397a9a2a6ed5238f854f490b0177b840abc6b62571ec3e07baa0bb94d3f14d5a
 utfcpp-4.1.0.tar.gz                    = 9a45cbeefacf512879971eaf57fe52133b73a0152d5354f3adeaf8d103cff0f3
@@ -248,12 +253,12 @@ xz-5.8.2.tar.gz                        = ce09c50a5962786b83e5da389c90dd2c15ecd09
 xz-5.8.3.tar.gz                        = 3d3a1b973af218114f4f889bbaa2f4c037deaae0c8e815eec381c3d546b974a0
 zlib-1.3.1.tar.gz                      = 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
 zlib-1.3.2.tar.gz                      = bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16
-strawberry-msvc-x86_64-release.tar.xz  = b605f9a40a7cd428bee01b65335b214eafcd2228340e85f60ef19328067f15ae
-strawberry-msvc-x86_64-debug.tar.xz    = 8f1e9545ae39ccff3c53439e263af715faea60f32ad8ada88dc8fcbaed5fe602
+strawberry-msvc-x86_64-release.tar.xz  = 342552dc17abc6d0fe4715afe6d323fa8b8f528f7f2ae52d192a9ed0b84e01c0
+strawberry-msvc-x86_64-debug.tar.xz    = 44dd23d3027479c930039f21ab1e1356be28d2c38f4dd27c3c987829dd2bed50
 bzip2-cmake.patch                      = c6089dcebc75789dd84c2edd6b36fe9cb40fbfcf9c4fd35d1a61204b00e3da8c
 faac-msvc.patch                        = 96f53f6411ac621768669d7eb3cd8d94767be4eba4d1b6f209f20f6fb919e9a5
 fftw-fixes.patch                       = 895a8c8bf1521eb5ae936e4ab4eba36a167b89fcc95e7cef41f228bdb40740aa
-glib-networking.patch                  = bb9d9e1fb2f16308533cf094e8f3df9d717a566c4c4fa4ac3457783a83a4b08b
+glib-networking.patch                  = 94967536c8877b0a9f3d7937940a95338da9a73a43946f482272c829d5a59d6f
 libbs2b-msvc.patch                     = 9feb9cc77217d4e9db3690fa3baeec33c4032d5a62a313967f8913d046daca93
 libopenmpt-cmake.patch                 = 0b56721a294ab27868246cab7149817edc6a5d82499ff16a9f198bc53a4654eb
 libpng-pkgconf.patch                   = 1aeb0c95f012d226ccfa5bb1d621540f9ec113f53ff8d03dd5b5366c9568d645
@@ -281,7 +286,7 @@ vc_redist.x86.exe
 https://github.com/projectM-visualizer/projectm/releases/download/v${LIBPROJECTM_VERSION}/libprojectm-${LIBPROJECTM_VERSION}.tar.gz
 https://github.com/abseil/abseil-cpp/archive/refs/tags/${ABSEIL_VERSION}/abseil-cpp-${ABSEIL_VERSION}.tar.gz
 https://github.com/curl/curl/releases/download/curl-${CURL_VERSION_UNDERSCORE}/curl-${CURL_VERSION}.tar.gz
-https://github.com/git-for-windows/git/releases/download/v${GIT_VERSION}.windows.1/Git-${GIT_VERSION}-64-bit.exe
+https://github.com/git-for-windows/git/releases/download/v$(if ($GIT_VERSION -match '(\d+\.\d+\.\d+)\.(\d+)'){'{0}.windows.{1}' -f $Matches[1], $Matches[2]} else {"$GIT_VERSION.windows.1"})/Git-${GIT_VERSION}-64-bit.exe
 https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-windows-x86_64.msi
 https://www.nasm.us/pub/nasm/releasebuilds/${NASM_VERSION}/win64/nasm-${NASM_VERSION}-installer-x64.exe
 https://github.com/lexxmark/winflexbison/releases/download/v${WIN_FLEX_BISON_VERSION}/win_flex_bison-${WIN_FLEX_BISON_VERSION}.zip
@@ -314,7 +319,7 @@ https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${C
 "@
     $FromScratchTargets = @"
 https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORE}.tar.gz
-https://pkgconfig.freedesktop.org/releases/pkg-config-${PKG_CONFIG_VERSION}.tar.gz
+# https://pkgconfig.freedesktop.org/releases/pkg-config-${PKG_CONFIG_VERSION}.tar.gz
 https://github.com/pkgconf/pkgconf/archive/refs/tags/pkgconf-${PKGCONF_VERSION}.tar.gz
 https://github.com/microsoft/mimalloc/archive/refs/tags/v${MIMALLOC_VERSION}/mimalloc-${MIMALLOC_VERSION}.tar.gz
 https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz

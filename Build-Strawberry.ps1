@@ -3491,6 +3491,7 @@ Cflags: -I`${includedir}
         $Error.Clear()
         & $BuildFunction
         $Success = $LASTEXITCODE -eq 0 -and $Error.Count -eq 0
+        Write-Progress -Completed
         if ($Success) {
             Start-Sleep -Milliseconds 500
             $Exists = $true

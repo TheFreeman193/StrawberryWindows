@@ -36,7 +36,7 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 - PowerShell 7.6.3
 - Visual Studio 2022 Community 17.14.35
   - C++ core module
-  - MSVC v14.44.35211.0
+  - MSVC 14.44.35211.0
   - C++ ATL for MSVC v143
   - JIT debugger
   - C++ profiling tools
@@ -44,15 +44,15 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
   - C++ AddressSanitizer
   - Windows 11 SDK 10.0.22621.7
   - vcpkg manager
-- Git for Windows 2.54.0
+- Git for Windows 2.55.0.2
 - Qt 6 build tools for VS2022
-- CMake 4.3.3
+- CMake 4.3.4
 - Meson Build 1.11.1
 - Ninja 1.13.0
-- NASM 3.01
+- NASM 3.02
 - Strawberry Perl 5.42.2
-- Python 3.14.4
-- 7-Zip 26.01
+- Python 3.14.6
+- 7-Zip 26.02
 - WinFlex 2.6.4
 - WinBison 3.7.4
 - Rust Compiler 1.96.1

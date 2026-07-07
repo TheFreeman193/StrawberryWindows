@@ -7,16 +7,16 @@ using namespace System.Collections.Specialized
 [CmdletBinding()]
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [string]$MsvcCommit = 'ff53549cb7dd64ff3842b26f821dde2ca92a812b', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
-    [string]$MsvcDepsCommit = 'f690133dc5afb15742efa214a4d1610d68b90333', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
-    [string]$MsvcDepsRelease = '0.1.3657', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
-    [string]$StrawberryCommit = '70859a8f14a6dd3305e92bde1ee7a6e488bfb4f0', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
-    [string]$CMakeVersion = '4.3.3',
-    [string]$7ZipVersion = '2601',
-    [string]$GitVersion = '2.54.0',
+    [string]$MsvcCommit = '8465bfbc48f5bb6db7150b5976788f266e5a909c', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
+    [string]$MsvcDepsCommit = 'e06318c85925b5a138fbea3d046b2b49cf4bfd75', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
+    [string]$MsvcDepsRelease = '0.1.3697', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
+    [string]$StrawberryCommit = '6d41f076c842b959a3f1b570df1c3d5c7e2ffa1d', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
+    [string]$CMakeVersion = '4.3.4',
+    [string]$7ZipVersion = '2602',
+    [string]$GitVersion = '2.55.0.2',
     [string]$MesonVersion = '1.11.1',
     [string]$StrawberryPerlVersion = '5.42.2.1',
-    [string]$PythonVersion = '3.14.4'
+    [string]$PythonVersion = '3.14.6'
 )
 process {
     $VersionTemp = New-TemporaryFile
