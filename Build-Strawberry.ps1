@@ -546,6 +546,7 @@ Requires: libssl libcrypto
             -DBUILD_SHARED_LIBS=ON `
             -DENABLE_SHARED=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
+            -DENABLE_STATIC=OFF `
             -DWITH_SIMD="$SIMD" | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
