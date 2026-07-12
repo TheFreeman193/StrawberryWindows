@@ -46,8 +46,8 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
   - vcpkg manager
 - Git for Windows 2.55.0.2
 - Qt 6 build tools for VS2022
-- CMake 4.3.4
-- Meson Build 1.11.1
+- CMake 4.4.0
+- Meson Build 1.11.2
 - Ninja 1.13.0
 - NASM 3.02
 - Strawberry Perl 5.42.2
@@ -55,7 +55,7 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 - 7-Zip 26.02
 - WinFlex 2.6.4
 - WinBison 3.7.4
-- Rust Compiler 1.96.1
+- Rust Compiler 1.97.0
 - NSIS 3.12
   - LockedList Plugin (DigitalMediaServer fork) 3.1.0.0
   - Registry Plugin 4.2
