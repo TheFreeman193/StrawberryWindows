@@ -7,8 +7,7 @@ It's written in C++ using the Qt toolkit.
 Currently, only Linux binaries are available for free and macOS and Windows users must either subscribe on Patreon or build it from source.
 I am therefore building my own binaries of Strawberry on Windows using Microsoft Visual C++ (MSVC) and making my build configuration and artifacts available here.
 
-I make no guarantees about the functionality of these builds, although I test them on 64-bit Windows 10 & Windows 11 systems before uploading to GitHub to ensure Strawberry starts and can play audio.
-I am not currently building for ARM64 as none of my systems run this architecture.
+I make no guarantees about the functionality of these builds, though I test them on Windows 10 & Windows 11 systems before uploading to GitHub to ensure Strawberry starts and can play audio.
 
 These builds rely on the Microsoft Visual C++ redistributable to run.
 This should install automatically when using the NSIS installer.
@@ -30,21 +29,10 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 
 ## Build Environment
 
-- Windows 10 Enterprise LTSC 10.0.19044.0 on Hyper-V assigned with:
-  - 8c Intel 9th Gen @ 4.8 GHz, 8-64 GB dynamically allocated RAM @ 3600 MT/s
-  - 64 GB boot disk, 32 GB RAM disk for staging/build targets
+### Common
+
 - PowerShell 7.6.3
-- Visual Studio 2022 Community 17.14.35
-  - C++ core module
-  - MSVC 14.44.35211.0
-  - C++ ATL for MSVC v143
-  - JIT debugger
-  - C++ profiling tools
-  - C++ CMake tools for Win64
-  - C++ AddressSanitizer
-  - Windows 11 SDK 10.0.22621.7
-  - vcpkg manager
-- Git for Windows 2.55.0.2
+- Git for Windows 2.55.0.3
 - Qt 6 build tools for VS2022
 - CMake 4.4.0
 - Meson Build 1.11.2
@@ -55,17 +43,43 @@ Strawberry's source code is licenced under the [GNU GPLv3](https://github.com/st
 - 7-Zip 26.02
 - WinFlex 2.6.4
 - WinBison 3.7.4
-- Rust Compiler 1.97.0
+- Rust Compiler 1.97.1
 - NSIS 3.12
   - LockedList Plugin (DigitalMediaServer fork) 3.1.0.0
   - Registry Plugin 4.2
   - Internet Client Plugin (DigitalMediaServer fork) 1.0.5.7
 
+### x64 and x86 builds
+
+- Windows 10 Enterprise LTSC 10.0.19044.0 on Hyper-V assigned with:
+  - 8c Intel 9th Gen @ 4.8 GHz, 8-64 GB dynamically allocated RAM @ 3600 MT/s
+  - 64 GB boot disk, 32 GB RAM disk for staging/build targets
+- Visual Studio 2022 Community 17.14.36
+  - C++ core module
+  - MSVC 14.44.35211.0 x64/x86
+  - C++ ATL for MSVC v143
+  - JIT debugger
+  - C++ profiling tools
+  - C++ CMake tools for Win64
+  - C++ AddressSanitizer
+  - Windows 11 SDK 10.0.22621.7
+  - vcpkg manager
+
+### ARM64 builds
+
+- Windows 10 IoT Enterprise LTSC 10.0.19044.0 on ARMv8-A Development SBC with:
+  - 8c Kryo 280 Gold @ 2.2 GHz, 8 GB LPDDR4X @ 1866 MT/s
+  - 48 GB UFS 2.1 boot disk, 32 GB NTFS UAS build disk
+- Visual Studio Build Tools 2022 17.14.36
+  - MSVC 14.44.35211.0 x64/x86
+  - MSVC 14.44.35211.0 ARM64/ARM64EC
+  - C++ ATL for MSVC v143 ARM64
+  - Windows 11 SDK 10.0.22621.7
+
 ## Releases
 
-- The nightly builds in the [Releases](https://github.com/TheFreeman193/StrawberryWindows/releases/) section are built with the precompiled dependencies from [strawberry-msvc-dependencies][deps-releases] (x86 builds are always from source now due to upstream discontinuation of x86 support).
-
-- The release builds use dependencies built from source; the build functions for these are in [Build-Strawberry.ps1][build-script].
+- x64 and ARM64 releases are built with precompiled dependencies from [strawberry-msvc-dependencies][deps-releases], while x86 releases are built with all dependencies from scratch.
+- The build functions for from-scratch build dependencies are in [Build-Strawberry.ps1][build-script].
 
 ### Debug Builds
 
@@ -126,7 +140,7 @@ Each dependency and Strawberry itself are compiled in a separate function in the
 This downloads and merges the dependency versions from the [StrawberryPackageVersions.txt](https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/blob/master/StrawberryPackageVersions.txt) and [build workflow](https://github.com/strawberrymusicplayer/strawberry/blob/master/.github/workflows/build.yml) files to create an up-to-date dependency mapping in plain text.
 This is read by the dependency collector and build scripts to download and compile the correct versions.
 
-The [version file](https://github.com/TheFreeman193/StrawberryWindows/blob/main/Versions.txt) used in the latest "nightly" build is kept in the repository for your reference.
+The [version file](https://github.com/TheFreeman193/StrawberryWindows/blob/main/Versions.txt) used in the latest build (release or unstable) is kept in the repository for your reference.
 
 ### Get-Dependencies.ps1
 

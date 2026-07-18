@@ -12,9 +12,10 @@ param(
     [string]$DependsPathRoot = 'R:\strawberry_msvc',
     [string]$TempPath = 'R:\TEMP',
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
+    [string]$VCRoot = "$env:ProgramFiles\Microsoft Visual Studio\2022\*\VC\",
     [ValidateSet('Release', 'Debug', 'RelWithDebInfo', 'MinSizeRel')]
     [string]$BuildType = 'Release',
-    [ValidateSet('x64', 'x86')]
+    [ValidateSet('x64', 'x86', 'arm64')]
     [string]$BuildArch = 'x64',
     [ValidateRange(1, 1e6)]
     [uint32]$MaxBuildTries = 1,
@@ -101,7 +102,7 @@ includedir=`${prefix}/include
     )
 
     Write-Host -fo Gray 'Configuring Visual Studio 2022 Dev Console...'
-    if ([string]::IsNullOrWhiteSpace($env:VSCMD_VER) -or $env:VSCMD_VER -notmatch '^17\.\d+\.\d+$' -or $env:VSCMD_ARG_TGT_ARCH -ne $BuildArch) {
+    if ([string]::IsNullOrWhiteSpace($env:VSCMD_VER) -or $env:VSCMD_VER -notmatch '^\d+\.\d+\.\d+$' -or $env:VSCMD_ARG_TGT_ARCH -ne $BuildArch) {
         $VSToolsPath = Get-Item 'C:\Program Files\Microsoft Visual Studio\2022\*\Common7\Tools\' -ErrorAction Ignore | Select-Object -Last 1 -ExpandProperty FullName
         $VSPSPath = "$VSToolsPath\Launch-VsDevShell.ps1"
         if ([string]::IsNullOrWhiteSpace($VSToolsPath) -or -not (Test-Path $VSToolsPath -PathType Container) -or -not (Test-Path $VSPSPath -PathType Leaf)) {
@@ -112,7 +113,7 @@ includedir=`${prefix}/include
             return
         }
         & $VSPSPath -Latest -ExcludePrerelease -SkipAutomaticLocation -HostArch $env:PROCESSOR_ARCHITECTURE -Arch $BuildArch64Alt
-        if ($env:VSCMD_VER -notmatch '^17\.\d+\.\d+$' -or $env:VSCMD_ARG_TGT_ARCH -ne $BuildArch -or $null -eq (Get-Command -CommandType Application 'nmake.exe')) {
+        if ($env:VSCMD_VER -notmatch '^\d+\.\d+\.\d+$' -or $env:VSCMD_ARG_TGT_ARCH -ne $BuildArch -or $null -eq (Get-Command -CommandType Application 'nmake.exe')) {
             $Err = [ErrorRecord]::new(
                 [InvalidPowerShellStateException]::new('Unable to properly configure the VS 2002 Dev Shell'),
                 'VisualStudioConfigError', 'ResourceUnavailable', 'C:\Program Files\Microsoft Visual Studio\2022'
@@ -122,11 +123,11 @@ includedir=`${prefix}/include
         }
         $env:Platform = $env:VSCMD_ARG_TGT_ARCH
     }
-    $VCPath = Get-Item 'C:\Program Files\Microsoft Visual Studio\2022\*\VC\' -ErrorAction Ignore | Select-Object -Last 1 -ExpandProperty FullName
+    $VCPath = Get-Item $VCRoot -ErrorAction Ignore | Select-Object -Last 1 -ExpandProperty FullName
     if ([string]::IsNullOrWhiteSpace($VCPath)) {
         $Err = [ErrorRecord]::new(
-            [InvalidPowerShellStateException]::new('VS2022 MSVC path not found!'),
-            'VisualStudioConfigError', 'ResourceUnavailable', 'C:\Program Files\Microsoft Visual Studio\2022\*\VC'
+            [InvalidPowerShellStateException]::new("VS MSVC path not found: '$VCRoot'"),
+            'VisualStudioConfigError', 'ResourceUnavailable', $VCRoot
         )
         $PSCmdlet.WriteError($Err)
         return
@@ -608,7 +609,9 @@ Requires: libssl libcrypto
         }
         Write-Host -fo Cyan '    CMake configure...'
         cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
-            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" | Out-Default
+            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
+            -DBUILD_SHARED_LIBS=ON `
+            -DBUILD_STATIC_LIBS=OFF | Out-Default
         if ($LASTEXITCODE -ne 0) { return }
         Write-Host -fo Cyan '    CMake build...'
         cmake.exe --build "$LocalBuildPath\build" | Out-Default
@@ -1534,6 +1537,7 @@ Cflags: -I`${includedir}
             if ($LASTEXITCODE -ne 0) { return }
         }
         Write-Host -fo Cyan '    Patch build configuration...'
+        Get-Content "$DownloadPath\lame-msvc.patch" -ErrorAction Stop | patch.exe -p1 -N -d $LocalBuildPath | Out-Default
         (Get-Content "$LocalBuildPath\Makefile.MSVC") -creplace '^(MACHINE = /machine:).+$', "`$1$($BuildArch.ToUpperInvariant())" | Set-Content "$LocalBuildPath\Makefile.MSVC"
         if (-not $?) { return }
         Push-Location $LocalBuildPath
@@ -3157,7 +3161,7 @@ Cflags: -I`${includedir}
         $IncludeSpotify = if (Test-Path "$DependsPath\lib\gstreamer-*\gstspotify.dll") { 'ON' } else { 'OFF' }
         $EnableCon = if ($EnableStrawberryConsole) { 'ON' } else { 'OFF' }
         Write-Host -fo Cyan '    CMake configure...'
-        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G 'Visual Studio 17 2022' -A $BuildArch32Alt `
+        cmake.exe @GlobalCMakeArgs -S $LocalBuildPath -B "$LocalBuildPath\build" -G $CMakeGenerator `
             -DICU_ROOT="$DependsPathForward" `
             -DARCH="$StrawbArch" `
             -DENABLE_WIN32_CONSOLE="$EnableCon" `
@@ -3193,12 +3197,14 @@ Cflags: -I`${includedir}
         Write-Host -fo Cyan '    Copy MSVC redistributable...'
         Copy-Item "$DownloadPath\vc_redist.$BuildArch.exe" "$LocalBuildPath\build\" -Force
         if (-not $?) { return }
-        Write-Host -fo Cyan '    Patch NSIS target libfftw3-3.dll -> fftw3.dll, MinGW -> MSVC...'
-        (Get-Content "$LocalBuildPath\build\strawberry.nsi" -Raw) -ireplace 'libfftw3-3\.dll', 'fftw3.dll' -ireplace
+        if ($FromScratch) {
+            Write-Host -fo Cyan '    Patch NSIS target libfftw3-3.dll -> fftw3.dll, MinGW -> MSVC...'
+            (Get-Content "$LocalBuildPath\build\strawberry.nsi" -Raw) -ireplace 'libfftw3-3\.dll', 'fftw3.dll' -ireplace
             '(!define (?:compiler )?["'']?)mingw', '$1msvc' -ireplace
             '\s*(?:File ["'']|Delete ["'']\$INSTDIR\\)libgcc_s_sjlj-1\.dll["'']' -ireplace
             '\s*(?:File ["'']|Delete ["'']\$INSTDIR\\)libwinpthread-1\.dll["'']' |
-            Set-Content "$LocalBuildPath\build\strawberry.nsi" -NoNewline
+                Set-Content "$LocalBuildPath\build\strawberry.nsi" -NoNewline
+        }
         Write-Host -fo Cyan '    Copy dependency binaries...'
         [list[string]]$FileList = Get-DependenciesFromNsi -NSIFile "$LocalBuildPath\build\strawberry.nsi"
         if (-not $? -or $FileList.Count -eq 0) { return }
@@ -3282,13 +3288,11 @@ Cflags: -I`${includedir}
 
     #region Build Strategy
 
-    if ($QTDevMode) {
-        $QTBaseVer = if ($QTDevMode) { "($(GetRepoCommit qtbase))" } else { $QT_VERSION }
-        $QTToolsVer = if ($QTDevMode) { "($(GetRepoCommit qttools))" } else { $QT_VERSION }
-        # $QTGrpcVer = if ($QTDevMode) { "($(GetRepoCommit qtgrpc))" } else { $QT_VERSION }
-    } else {
-        $QTBaseVer = $QTToolsVer = <# $QTGrpcVer =  #>$QT_VERSION
-    }
+    $QTBaseVer = if ($QTDevMode) { "($(GetRepoCommit qtbase))" } else { $QT_VERSION }
+    $QTToolsVer = if ($QTDevMode) { "($(GetRepoCommit qttools))" } else { $QT_VERSION }
+    $QTImgFormatsVer = if ($QTDevMode) { "($(GetRepoCommit qtimageformats))" } else { $QT_VERSION }
+    $QTGrpcVer = if ($QTDevMode) { "($(GetRepoCommit qtgrpc))" } else { $QT_VERSION }
+
     $BUILD_TARGETS = [ordered]@{
         "pkgconf $PKGCONF_VERSION"                     = 'BuildPkgConf', '*', "$DependsPath\bin\pkgconf.exe"
         "Yasm $YASM_VERSION"                           = 'BuildYasm', '*', "$DependsPath\bin\yasm.exe"
@@ -3355,14 +3359,14 @@ Cflags: -I`${includedir}
         "Protobuf $PROTOBUF_VERSION"                   = 'BuildProtobuf', '*', "$DependsPath\lib\pkgconfig\protobuf.pc"
         "Qtbase $QTBaseVer"                            = 'BuildQtbase', '*', "$DependsPath\bin\qt-configure-module.bat"
         "Qttools $QTToolsVer"                          = 'BuildQttools', '*', "$DependsPath\lib\cmake\Qt6Linguist\Qt6LinguistConfig.cmake"
-        "Qtimageformats $QTToolsVer"                   = 'BuildQtimageformats', '*', "$DependsPath\plugins\imageformats\qwebp$DebugPostfix.dll"
+        "Qtimageformats $QTImgFormatsVer"              = 'BuildQtimageformats', '*', "$DependsPath\plugins\imageformats\qwebp$DebugPostfix.dll"
         "Qtgrpc $QTGrpcVer"                            = 'BuildQtgrpc', '*', "$DependsPath\lib\cmake\Qt6\FindWrapProtoc.cmake"
         "KDsingleapp $KDSINGLEAPPLICATION_VERSION"     = 'BuildKdsingleapp', '*', "$DependsPath\lib\kdsingleapplication-qt6.lib"
         "Qtsparkle ($(GetRepoCommit qtsparkle))"       = 'BuildQtsparkle', '*', "$DependsPath\lib\cmake\qtsparkle-qt6\qtsparkle-qt6Config.cmake"
         "Sparsehash $SPARSEHASH_VERSION"               = 'BuildSparsehash', '*', "$DependsPath\lib\pkgconfig\libsparsehash.pc"
-        "Glew $GLEW_VERSION"                           = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
-        "Libprojectm $LIBPROJECTM_VERSION"             = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
-        "Tinysvcmdns ($(GetRepoCommit tinysvcmdns))"   = 'BuildTinysvcmdns', '*', "$DependsPath\lib\pkgconfig\tinysvcmdns.pc"
+        # "Glew $GLEW_VERSION"                           = 'BuildGlew', '*', "$DependsPath\lib\pkgconfig\glew.pc"
+        # "Libprojectm $LIBPROJECTM_VERSION"             = 'BuildLibprojectm', '*', "$DependsPath\lib\cmake\projectM4\projectM4Config.cmake"
+        # "Tinysvcmdns ($(GetRepoCommit tinysvcmdns))"   = 'BuildTinysvcmdns', '*', "$DependsPath\lib\pkgconfig\tinysvcmdns.pc"
         "Pe-parse $PEPARSE_VERSION"                    = 'BuildPeParse', '*', "$DependsPath\lib\pe-parse.lib"
         "Pe-util ($(GetRepoCommit pe-util))"           = 'BuildPeUtil', '*', "$DependsPath\bin\peldd.exe"
     }

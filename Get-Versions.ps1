@@ -7,10 +7,10 @@ using namespace System.Collections.Specialized
 [CmdletBinding()]
 param(
     [string]$VersionFile = "$PSScriptRoot\Versions.txt",
-    [string]$MsvcCommit = 'd0ce8b8331d920915e198e2f2b985c8530fd64f4', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
-    [string]$MsvcDepsCommit = 'ff1c07e3614eb691db8cf500c49eab580683683b', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
-    [string]$MsvcDepsRelease = '0.1.3703', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
-    [string]$StrawberryCommit = '1e88a04519199e025263199a51337be9e24da42d', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
+    [string]$MsvcCommit = '7987ae3d1387a4c1954ecbaa284ebe94ef0ddd67', # https://github.com/strawberrymusicplayer/strawberry-msvc-build-tools/commits/master/
+    [string]$MsvcDepsCommit = 'bffa712d808681ff08d5a66519e2d9a631e35b45', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/commits/master/
+    [string]$MsvcDepsRelease = '0.1.39', # https://github.com/strawberrymusicplayer/strawberry-msvc-dependencies/releases
+    [string]$StrawberryCommit = 'd5213cd20ccc7c39c892e44fefafa7965e6fbfd0', # https://github.com/strawberrymusicplayer/strawberry/commits/master/
     [string]$CMakeVersion = '4.4.0',
     [string]$7ZipVersion = '2602',
     [string]$GitVersion = '2.55.0.2',
@@ -22,7 +22,7 @@ process {
     $VersionTemp = New-TemporaryFile
     $WorkflowTemp = New-TemporaryFile
     Invoke-WebRequest "https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-build-tools/$MsvcCommit/StrawberryPackageVersions.txt" -OutFile $VersionTemp
-    Invoke-WebRequest "https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/$MsvcDepsCommit/.github/workflows/build.yml" -OutFile $WorkflowTemp
+    Invoke-WebRequest "https://raw.githubusercontent.com/strawberrymusicplayer/strawberry-msvc-dependencies/$MsvcDepsCommit/.github/workflows/build.yaml" -OutFile $WorkflowTemp
     if (-not $?) { return }
 
     $SB = [StringBuilder]::new()
